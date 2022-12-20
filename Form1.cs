@@ -48,12 +48,12 @@ namespace MT_MDM
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
-            if (!ymodem)
+            if (!ymodem && textCnt < term.Text.Length)
             {
                 if (term.Text.Length < textCnt)
                     textCnt = term.TextLength;
                 var txt = term.Text.Substring(textCnt);
-                string msg = "Sent " + txt.Length + " bytes";
+                string msg = "Sent " + txt.Length + " bytes "+ txt;
                 Debug.WriteLine(msg);
                 textCnt = txt.Length + textCnt;
                 try
@@ -173,8 +173,8 @@ namespace MT_MDM
                     string s = serialPort.ReadExisting();
                     string msg = "Rcvd " + s.Length +" byte " +s;
                     Debug.WriteLine(msg);
-                    term.Text += s;
                     textCnt += s.Length;
+                    term.Text += s;
 
                 }));
             }
