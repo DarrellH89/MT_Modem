@@ -37,6 +37,7 @@
             this.BtnDrop = new System.Windows.Forms.Button();
             this.statusBox = new System.Windows.Forms.TextBox();
             this.BtnYmodem = new System.Windows.Forms.Button();
+            this.btnTerm = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // ComPort
@@ -132,7 +133,7 @@
             // 
             // BtnYmodem
             // 
-            this.BtnYmodem.Location = new System.Drawing.Point(713, 91);
+            this.BtnYmodem.Location = new System.Drawing.Point(713, 165);
             this.BtnYmodem.Name = "BtnYmodem";
             this.BtnYmodem.Size = new System.Drawing.Size(81, 23);
             this.BtnYmodem.TabIndex = 8;
@@ -140,11 +141,22 @@
             this.BtnYmodem.UseVisualStyleBackColor = true;
             this.BtnYmodem.Click += new System.EventHandler(this.BtnYmodem_Click);
             // 
+            // btnTerm
+            // 
+            this.btnTerm.Location = new System.Drawing.Point(713, 91);
+            this.btnTerm.Name = "btnTerm";
+            this.btnTerm.Size = new System.Drawing.Size(81, 23);
+            this.btnTerm.TabIndex = 9;
+            this.btnTerm.Text = "Terminal";
+            this.btnTerm.UseVisualStyleBackColor = true;
+            this.btnTerm.Click += new System.EventHandler(this.btnTerm_Click);
+            // 
             // MtMdm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(850, 551);
+            this.Controls.Add(this.btnTerm);
             this.Controls.Add(this.BtnYmodem);
             this.Controls.Add(this.statusBox);
             this.Controls.Add(this.BtnDrop);
@@ -173,6 +185,7 @@
         private System.Windows.Forms.Button BtnDrop;
         private System.Windows.Forms.TextBox statusBox;
         private System.Windows.Forms.Button BtnYmodem;
+        private System.Windows.Forms.Button btnTerm;
     }
 }
 

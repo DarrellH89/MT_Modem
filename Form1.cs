@@ -12,7 +12,7 @@ using System.Management;
 using System.Configuration;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Button;
 using System.Diagnostics;
-using System.Text;
+using System.Runtime.InteropServices;
 using System.Drawing.Drawing2D;
 
 namespace MT_MDM
@@ -23,8 +23,13 @@ namespace MT_MDM
         Configuration config = ConfigurationManager.OpenExeConfiguration(Application.ExecutablePath);
         int textCnt = 0;
         bool ymodem = false;
-        private const int bufSize = 2048;
+        bool online = false;
+        private const int bufSize = 1024 * 8;
+        private char[] bufTerm = new char[80 * 25 + 100];
         private byte[] buf = new byte[bufSize];
+        [DllImport("KERNEL32.DLL", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool AllocConsole();
 
         public MtMdm()
         {
@@ -49,7 +54,7 @@ namespace MT_MDM
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
             if (!ymodem && textCnt < term.Text.Length)
-            {
+            { 
                 if (term.Text.Length < textCnt)
                     textCnt = term.TextLength;
                 var txt = term.Text.Substring(textCnt);
@@ -139,6 +144,8 @@ namespace MT_MDM
             {
                 serialPort.Open();
                 setConnected();
+                online = true;
+                startTerm("Test");
             }
             catch (System.IO.IOException)
             {
@@ -147,6 +154,38 @@ namespace MT_MDM
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
+        }
+        private void btnTerm_Click(object sender, EventArgs e)
+        {
+            char dataOut;
+            ConsoleKeyInfo dataIn;
+            byte[] data = new byte[5];
+            data[0] = 0;
+
+            if (online)
+            {
+                do
+                {
+                    AllocConsole();
+                    if (Console.KeyAvailable)
+                    {
+                        dataIn = Console.ReadKey();
+                        data[0] = (byte)dataIn.Key;
+                        serialPort.Write(data, 0, 1);
+
+                    }
+                    
+                } while (data[0] != 5);
+                
+            }
+            else
+            {
+                MessageBox.Show("Not Connected!",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+
         }
         //private void serialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         //{
@@ -171,12 +210,18 @@ namespace MT_MDM
                 {
                     //read received message
                     string s = serialPort.ReadExisting();
-                    string msg = "Rcvd " + s.Length +" byte " +s;
+                    string msg = "Rcvd " + s.Length + " byte " + s;
                     Debug.WriteLine(msg);
                     textCnt += s.Length;
                     term.Text += s;
 
                 }));
+                //var data = serialPort.ReadByte();
+                //Invoke(new Action(() =>
+                //{
+                //    Console.Write(data);
+                //}));
+
             }
             else
             {
@@ -196,6 +241,7 @@ namespace MT_MDM
         private void BtnDrop_Click(object sender, EventArgs e)
         {
             setDisconnected();
+            online = false;
         }
 
         private void MtMdm_FormClosing(object sender, FormClosingEventArgs e)
@@ -351,6 +397,7 @@ namespace MT_MDM
         /// <summary>
         /// SAVES CURRENT SESSION SETTINGS SO THAT THEY CAN BE LOADED
         /// WHEN THE APP RUNS AGAIN.
+        /// Learned from https://github.com/hushoca/c-serial-terminal
         /// </summary>
         public void saveCurrentSessionSettings()
         {
