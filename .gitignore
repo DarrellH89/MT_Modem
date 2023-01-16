@@ -1,6 +1,5 @@
 .vs/
 obj/*
 bin/debug/*
-bin/release/*.exe
 bin/release/*.lnk
 packages/*

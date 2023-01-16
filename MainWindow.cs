@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO.Ports;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,8 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.Button;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Drawing.Drawing2D;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.Drawing.Imaging;
 
 namespace MT_MDM
 {
@@ -22,15 +25,28 @@ namespace MT_MDM
         private SerialPort serialPort = new SerialPort();
         Configuration config = ConfigurationManager.OpenExeConfiguration(Application.ExecutablePath);
         int textCnt = 0;
+        string textStr = "";
         bool ymodem = false;
         bool online = false;
         private const int bufSize = 1024 * 8;
         private char[] bufTerm = new char[80 * 25 + 100];
         private byte[] buf = new byte[bufSize];
+        private string fontPath = "";
         [DllImport("KERNEL32.DLL", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool AllocConsole();
+        // Display variables
+        private static int numCol = 80, numRow = 25, charWidth = 12, charHeight = 12;
+        private int minW = numCol * charWidth * 2, minH = numRow * charHeight * 2;
+        Bitmap bm;
+        GCHandle bmPixels;
+        private UInt32[] bmPixMap;
+        int cursorX = 0, cursorY = 0;
+        bool ctlE = false;
+        //
 
+        //
+        //***************** Form Controls ****************************//
         public MtMdm()
         {
             InitializeComponent();
@@ -38,46 +54,183 @@ namespace MT_MDM
             loadPreviousSessionSettings();
             setDisconnected();
             serialPort.DataReceived += new SerialDataReceivedEventHandler(serialDataReceived);
+            display_init();
+            statusBox.Enabled= false;
 
         }
-
-        private void label1_Click(object sender, EventArgs e)
+        private void BtnConnect_Click(object sender, EventArgs e)
         {
+            {
+                serialPort.BaudRate = GetBaudRate();
+                serialPort.PortName = GetPortName();
+                serialPort.Parity = (Parity)0;// "None";
+                serialPort.StopBits = (StopBits)1;
+                serialPort.DataBits = 8;
+            }
+            try
+            {
+                serialPort.Open();
+                setConnected();
+                online = true;
 
+            }
+            catch (System.IO.IOException)
+            {
+                MessageBox.Show("Could not connect to the COM port selected!",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
-
-        private void label2_Click(object sender, EventArgs e)
+        
+        //
+        //***************** Terminal mode - NOT CURRENTLY NEEDED - WILL DELETE
+        private void btnTerm_Click(object sender, EventArgs e)
         {
+            char dataOut;
+            ConsoleKeyInfo dataIn;
+            byte[] data = new byte[5];
+            data[0] = 0;
 
-        }
-
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
-            if (!ymodem && textCnt < term.Text.Length)
-            { 
-                if (term.Text.Length < textCnt)
-                    textCnt = term.TextLength;
-                var txt = term.Text.Substring(textCnt);
-                string msg = "Sent " + txt.Length + " bytes "+ txt;
-                Debug.WriteLine(msg);
-                textCnt = txt.Length + textCnt;
-                try
+            if (online)
+            {
+                do
                 {
-                    serialPort.Write(txt);
-                }
-                catch (InvalidOperationException)
-                {
-                    MessageBox.Show("Disconnected from serial port.", "Warning", MessageBoxButtons.OK,
-                                        MessageBoxIcon.Warning);
-                    //                setDisconnected();
-                }
+                    //AllocConsole();
+                    //if (Console.KeyAvailable)
+                    //{
+                    //    dataIn = Console.ReadKey();
+                    //    data[0] = (byte)dataIn.Key;
+                    //    serialPort.Write(data, 0, 1);
+
+                    //}
+                    // check serial data
+                    if (textStr != null)
+                    {
+                        byte[] bytes = Encoding.ASCII.GetBytes(textStr);
+                        foreach (byte ch in bytes)
+                            displayChar(ch);
+                        textStr = null;
+                    }
+
+                } while (data[0] != 5);
+
             }
             else
             {
-
+                MessageBox.Show("Not Connected!",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
 
         }
+        private void panel1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void MtMdm_KeyDown(object sender, KeyEventArgs e)
+        {
+            byte[] ch = new byte[4];
+            //if (e.Control && e.KeyCode == Keys.E)
+            //    Close();
+            ch[0] = (byte)e.KeyCode;
+            if (!e.Shift)
+                ch[0] += 0x20;
+            if (online)                  // might need to check if Term key clicked
+                displayChar(ch[0]);
+            serialPort.Write(ch, 0,1);
+
+        }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void statusBox_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnFont_Click(object sender, EventArgs e)
+        {
+            loadFont("");
+        }
+        private void MtMdm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            saveCurrentSessionSettings();
+        }
+        //
+        //************ Terminal Display Functions ************************
+
+
+        private void display_init()
+        {
+            int x, y;
+
+            //Rectangle rect = Screen.PrimaryScreen.Bounds;
+            bmPixMap = new UInt32[minW * minH];
+            bmPixels = GCHandle.Alloc(bmPixMap, GCHandleType.Pinned);
+            bm = new Bitmap(minW, minH, minW * sizeof(Int32), PixelFormat.Format32bppPArgb, bmPixels.AddrOfPinnedObject());
+            Color newColor = Color.FromArgb(0, 0, 0);
+            for (x = 0; x < bm.Width; x++)
+                for (y = 0; y < bm.Height; y++)
+                    bm.SetPixel(x, y, newColor);
+            termH19.Image = bm;
+        }
+        private void displayChar(byte ch)
+        {
+            // Font 8 x 10
+            //char ch;
+            int charSize = 10;
+
+            lock (bm)
+            {
+                if (ch > 0x1f && ch < 0x80)
+                {
+                    int cx = cursorX;
+                    int cy = cursorY;
+                    int x, y, ptrFont, t;
+                    int mask = 128;
+
+
+                    ptrFont = ch * 16;
+                    Color newColor = Color.FromArgb(0, 250, 0);
+                    for (y = 0; y < 10; y++)
+                    {
+                        mask = 128;
+                        for (x = 0; x < 8; x++)
+                        {
+
+                            t = h19.h19Font[ptrFont];
+                            if ((h19.h19Font[ptrFont] & mask) > 1)
+                            {
+                                bm.SetPixel(cx + x, cy + y, newColor);
+                                bm.SetPixel(cx + x + 1, cy + y, newColor); 
+                                bm.SetPixel(cx + x, cy + y+1, newColor);
+                                bm.SetPixel(cx + x + 1, cy + y + 1, newColor);
+                            }
+                            //cx += 2;
+                            mask = mask / 2;
+                        }
+                        cy += 2;
+                        ptrFont++;
+                    }
+                    cursorX += charSize;
+                    if (cursorX > numCol * charSize)
+                    {
+                        cursorX = 0;
+                        cursorY += 12;
+                    }
+                    termH19.Image = bm;
+
+                }
+            }
+        }
+       //
+       //****************** Serial Port Functions *******************
         private void RefreshPortList()
         {
             ComPort.Items.Clear();
@@ -97,7 +250,6 @@ namespace MT_MDM
                 var tList = (from n in portnames
                              join p in ports on n equals p["DeviceID"].ToString()
                              select n + " - " + p["Caption"]).ToList();
-
                 foreach (string port in portnames)
                 {
                     bool founded = false;
@@ -113,9 +265,7 @@ namespace MT_MDM
                         tList.Add(port);
                         break;
                     }
-
                 }
-
                 return tList;
             }
         }
@@ -131,71 +281,8 @@ namespace MT_MDM
             temp += ' ';
             return temp.Substring(0, temp.IndexOf(' '));
         }
-        private void BtnConnect_Click(object sender, EventArgs e)
-        {
-               {
-                serialPort.BaudRate = GetBaudRate();
-                serialPort.PortName = GetPortName();
-                serialPort.Parity = (Parity)0;// "None";
-                serialPort.StopBits = (StopBits) 1;
-                serialPort.DataBits = 8;
-            }
-            try
-            {
-                serialPort.Open();
-                setConnected();
-                online = true;
-                startTerm("Test");
-            }
-            catch (System.IO.IOException)
-            {
-                MessageBox.Show("Could not connect to the COM port selected!",
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-        }
-        private void btnTerm_Click(object sender, EventArgs e)
-        {
-            char dataOut;
-            ConsoleKeyInfo dataIn;
-            byte[] data = new byte[5];
-            data[0] = 0;
+ 
 
-            if (online)
-            {
-                do
-                {
-                    AllocConsole();
-                    if (Console.KeyAvailable)
-                    {
-                        dataIn = Console.ReadKey();
-                        data[0] = (byte)dataIn.Key;
-                        serialPort.Write(data, 0, 1);
-
-                    }
-                    
-                } while (data[0] != 5);
-                
-            }
-            else
-            {
-                MessageBox.Show("Not Connected!",
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-
-        }
-        //private void serialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
-        //{
-        //    System.Threading.Thread.Sleep(100);
-        //    byte[] arr = new byte[serialPort.BytesToRead];
-        //    serialPort.Read(arr, 0, arr.Length);
-        //    //LogData("Port#1", arr);
-
-
-        //}
         private void serialDataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             // Overall Processing
@@ -206,22 +293,17 @@ namespace MT_MDM
              */
             if (!ymodem)
             {
-                Invoke(new Action(() =>
-                {
-                    //read received message
-                    string s = serialPort.ReadExisting();
-                    string msg = "Rcvd " + s.Length + " byte " + s;
-                    Debug.WriteLine(msg);
-                    textCnt += s.Length;
-                    term.Text += s;
-
-                }));
-                //var data = serialPort.ReadByte();
                 //Invoke(new Action(() =>
                 //{
-                //    Console.Write(data);
+                //    //read received message
+                //    string s = serialPort.ReadExisting();
+                //    string msg = "Rcvd " + s.Length + " byte " + s;
+                //    Debug.WriteLine(msg);
+                //    textCnt += s.Length;  // WHAT is this for?
+                //    textStr += s;
                 //}));
-
+                byte data = (byte) serialPort.ReadByte();
+                displayChar(data);
             }
             else
             {
@@ -244,16 +326,13 @@ namespace MT_MDM
             online = false;
         }
 
-        private void MtMdm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            saveCurrentSessionSettings();
-        }
+
         public void setConnected()
         {
             //scanButton.Enabled = false;
             BtnConnect.Enabled = false;
             BtnDrop.Enabled = true;
-            term.Enabled = true;
+            termH19.Enabled = true;
             statusBox.Text = "Connected.";
         }
 
@@ -267,19 +346,19 @@ namespace MT_MDM
             //scanButton.Enabled = false;
             BtnConnect.Enabled = true;
             BtnDrop.Enabled = false;
-            term.Enabled = false;
+            termH19.Enabled = false;
             statusBox.Text = "Not Connected.";
         }
-        /************************************************************************
-         * File Transfer
-         */
+        //
+        //*********************** File Transfer
+        //
         private void BtnYmodem_Click(object sender, EventArgs e)
         {
 
         }
-        /**************************************************************************
-         * Configuration files
-         * */
+        //
+        //*************************** Configuration files
+        //
         public void initSettings()
         {
             //clear so if program messed up and already there is a
@@ -301,6 +380,7 @@ namespace MT_MDM
 
             config.AppSettings.Settings.Add("form_width", "580");
             config.AppSettings.Settings.Add("form_height", "640");
+            config.AppSettings.Settings.Add("fontPath","c:\\");
             #endregion
 
             //set form items to default.
@@ -334,6 +414,7 @@ namespace MT_MDM
             int form_height = 0;
 
             bool cr = true;
+            string font_path = null;
             #endregion
 
             //try catch to make sure user didnt mess the xml file and added characters
@@ -349,6 +430,7 @@ namespace MT_MDM
                 form_width = int.Parse(config.AppSettings.Settings["form_width"].Value);
                 form_height = int.Parse(config.AppSettings.Settings["form_height"].Value);
                 cr = Boolean.Parse(config.AppSettings.Settings["CR"].Value);
+                font_path = (config.AppSettings.Settings["fontPath"].Value);
             }
             catch (Exception)
             {
@@ -390,6 +472,8 @@ namespace MT_MDM
                 this.Top = form_y;
                 this.Height = form_height;
                 this.Width = form_width;
+                this.fontPath= font_path;
+                loadFont(font_path);
                 #endregion
             }
         }
@@ -429,7 +513,7 @@ namespace MT_MDM
 
             config.AppSettings.Settings.Add("form_width", form_width);
             config.AppSettings.Settings.Add("form_height", form_height);
-
+            config.AppSettings.Settings.Add("fontPath", fontPath);
             //set form items to default.
             BaudRate.SelectedItem = "19200";
            
@@ -438,6 +522,41 @@ namespace MT_MDM
 
         }
 
+        //******************* Load Font ******************
+        void loadFont(string path)
+        {
+            if (path.Length == 0)
+            {
+                OpenFileDialog openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
+                openFileDialog1.Filter = "Font Files (*.bin)|*.bin";
+                openFileDialog1.FilterIndex = 2;
+                openFileDialog1.RestoreDirectory = true;
+                openFileDialog1.CheckFileExists = false;
+                openFileDialog1.ShowDialog();
+                path = openFileDialog1.FileName;
+                if (path.Length == 0)
+                {
+                    statusBox.Text = ("No font files found");
+                    return;
+                }
+                else
+                {
+                    fontPath = path;
+                    saveCurrentSessionSettings();
+                }
+            }
+            fontBox.Text = fontPath.Substring(fontPath.LastIndexOf("\\") + 1);   
+            h19.h19Font = File.ReadAllBytes(path);
+            h19.fontOK = true;
+        }
+
+        //
+        //******************* Font Class h19 ************************************
+        public partial class h19
+        {
+            public static byte[] h19Font = new byte[4096];
+            public static bool fontOK = false;
+        }
 
     }
 }
