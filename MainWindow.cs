@@ -36,12 +36,14 @@ namespace MT_MDM
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool AllocConsole();
         // Display variables
-        private static int numCol = 80, numRow = 25, charWidth = 12, charHeight = 12;
-        private int minW = numCol * charWidth * 2, minH = numRow * charHeight * 2;
+        private static int numCol = 80, numRow = 25, charWidth = 8, charHeight = 10;
+                // 2 pixels per bit, 2 pixel spacer
+        private int minW = numCol * (charWidth * 2+2), minH = numRow * (charHeight * 2 + 2);
         Bitmap bm;
         GCHandle bmPixels;
         private UInt32[] bmPixMap;
-        int cursorX = 0, cursorY = 0;
+        int cursorX = 0;        // Current cursor X position 80x25 grid
+        int cursorY = 0;        // Current cursor Y position
         bool ctlE = false;
         //
 
@@ -125,6 +127,8 @@ namespace MT_MDM
             }
 
         }
+        //**************** End code to delete
+
         private void panel1_Paint(object sender, PaintEventArgs e)
         {
 
@@ -184,14 +188,14 @@ namespace MT_MDM
         {
             // Font 8 x 10
             //char ch;
-            int charSize = 10;
+            int charSize = charWidth*2;
 
             lock (bm)
             {
                 if (ch > 0x1f && ch < 0x80)
                 {
-                    int cx = cursorX;
-                    int cy = cursorY;
+                    int cx = cursorX * (charWidth * 2-2);
+                    int cy = cursorY * (charHeight * 2 + 8);
                     int x, y, ptrFont, t;
                     int mask = 128;
 
@@ -207,10 +211,10 @@ namespace MT_MDM
                             t = h19.h19Font[ptrFont];
                             if ((h19.h19Font[ptrFont] & mask) > 1)
                             {
-                                bm.SetPixel(cx + x, cy + y, newColor);
-                                bm.SetPixel(cx + x + 1, cy + y, newColor); 
-                                bm.SetPixel(cx + x, cy + y+1, newColor);
-                                bm.SetPixel(cx + x + 1, cy + y + 1, newColor);
+                                bm.SetPixel(cx + x*2, cy + y, newColor);
+                                bm.SetPixel(cx + x*2 + 1, cy + y, newColor); 
+                                bm.SetPixel(cx + x*2, cy + y+1, newColor);
+                                bm.SetPixel(cx + x*2 + 1, cy + y + 1, newColor);
                             }
                             //cx += 2;
                             mask = mask / 2;
@@ -218,13 +222,18 @@ namespace MT_MDM
                         cy += 2;
                         ptrFont++;
                     }
-                    cursorX += charSize;
-                    if (cursorX > numCol * charSize)
+                    cursorX ++;
+                    if (cursorX == numCol )
                     {
                         cursorX = 0;
-                        cursorY += 12;
+                        cursorY ++;
                     }
-                    termH19.Image = bm;
+
+                    termH19.Image = bm; 
+                    Invoke(new Action(() => { 
+                        cursorBox.Text = cursorX.ToString() + "x" + cursorY.ToString(); 
+
+                        }));              
 
                 }
             }
@@ -302,8 +311,13 @@ namespace MT_MDM
                 //    textCnt += s.Length;  // WHAT is this for?
                 //    textStr += s;
                 //}));
-                byte data = (byte) serialPort.ReadByte();
-                displayChar(data);
+                int data= serialPort.ReadByte();
+                while(data != -1)
+                {
+                    displayChar((byte)data);
+                    data = serialPort.ReadByte();
+                }
+      
             }
             else
             {

@@ -38,10 +38,12 @@
             this.BtnYmodem = new System.Windows.Forms.Button();
             this.btnTerm = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.fontBox = new System.Windows.Forms.TextBox();
+            this.btnFont = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.termH19 = new System.Windows.Forms.PictureBox();
-            this.btnFont = new System.Windows.Forms.Button();
-            this.fontBox = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.cursorBox = new System.Windows.Forms.TextBox();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.termH19)).BeginInit();
             this.SuspendLayout();
@@ -49,9 +51,9 @@
             // ComPort
             // 
             this.ComPort.FormattingEnabled = true;
-            this.ComPort.Location = new System.Drawing.Point(18, 34);
+            this.ComPort.Location = new System.Drawing.Point(86, 5);
             this.ComPort.Name = "ComPort";
-            this.ComPort.Size = new System.Drawing.Size(171, 21);
+            this.ComPort.Size = new System.Drawing.Size(114, 21);
             this.ComPort.TabIndex = 0;
             this.ComPort.SelectedIndexChanged += new System.EventHandler(this.ComPort_SelectedIndexChanged);
             // 
@@ -73,9 +75,9 @@
             "115200",
             "128000",
             "256000"});
-            this.BaudRate.Location = new System.Drawing.Point(210, 34);
+            this.BaudRate.Location = new System.Drawing.Point(86, 31);
             this.BaudRate.Name = "BaudRate";
-            this.BaudRate.Size = new System.Drawing.Size(121, 21);
+            this.BaudRate.Size = new System.Drawing.Size(114, 21);
             this.BaudRate.TabIndex = 1;
             this.BaudRate.SelectedIndexChanged += new System.EventHandler(this.BaudRate_SelectedIndexChanged);
             // 
@@ -83,7 +85,7 @@
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(15, 3);
+            this.label1.Location = new System.Drawing.Point(3, 6);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(77, 17);
             this.label1.TabIndex = 3;
@@ -93,7 +95,7 @@
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(207, 3);
+            this.label2.Location = new System.Drawing.Point(3, 35);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(84, 17);
             this.label2.TabIndex = 4;
@@ -150,8 +152,11 @@
             // panel1
             // 
             this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.panel1.Controls.Add(this.cursorBox);
+            this.panel1.Controls.Add(this.label4);
             this.panel1.Controls.Add(this.fontBox);
             this.panel1.Controls.Add(this.btnFont);
+            this.panel1.Controls.Add(this.label2);
             this.panel1.Controls.Add(this.label3);
             this.panel1.Controls.Add(this.btnTerm);
             this.panel1.Controls.Add(this.statusBox);
@@ -161,12 +166,28 @@
             this.panel1.Controls.Add(this.BtnDrop);
             this.panel1.Controls.Add(this.BtnConnect);
             this.panel1.Controls.Add(this.label1);
-            this.panel1.Controls.Add(this.label2);
             this.panel1.Location = new System.Drawing.Point(12, 557);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(895, 58);
             this.panel1.TabIndex = 10;
             this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
+            // 
+            // fontBox
+            // 
+            this.fontBox.Location = new System.Drawing.Point(778, 34);
+            this.fontBox.Name = "fontBox";
+            this.fontBox.Size = new System.Drawing.Size(96, 20);
+            this.fontBox.TabIndex = 13;
+            // 
+            // btnFont
+            // 
+            this.btnFont.Location = new System.Drawing.Point(778, 3);
+            this.btnFont.Name = "btnFont";
+            this.btnFont.Size = new System.Drawing.Size(81, 23);
+            this.btnFont.TabIndex = 12;
+            this.btnFont.Text = "Font";
+            this.btnFont.UseVisualStyleBackColor = true;
+            this.btnFont.Click += new System.EventHandler(this.btnFont_Click);
             // 
             // label3
             // 
@@ -181,34 +202,36 @@
             // 
             // termH19
             // 
-            this.termH19.Location = new System.Drawing.Point(12, 9);
+            this.termH19.Dock = System.Windows.Forms.DockStyle.Top;
+            this.termH19.Location = new System.Drawing.Point(0, 0);
+            this.termH19.MinimumSize = new System.Drawing.Size(600, 300);
             this.termH19.Name = "termH19";
-            this.termH19.Size = new System.Drawing.Size(913, 542);
+            this.termH19.Size = new System.Drawing.Size(1287, 548);
+            this.termH19.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.termH19.TabIndex = 11;
             this.termH19.TabStop = false;
             // 
-            // btnFont
+            // label4
             // 
-            this.btnFont.Location = new System.Drawing.Point(778, 3);
-            this.btnFont.Name = "btnFont";
-            this.btnFont.Size = new System.Drawing.Size(81, 23);
-            this.btnFont.TabIndex = 12;
-            this.btnFont.Text = "Font";
-            this.btnFont.UseVisualStyleBackColor = true;
-            this.btnFont.Click += new System.EventHandler(this.btnFont_Click);
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(221, 12);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(37, 13);
+            this.label4.TabIndex = 14;
+            this.label4.Text = "Cursor";
             // 
-            // fontBox
+            // cursorBox
             // 
-            this.fontBox.Location = new System.Drawing.Point(778, 34);
-            this.fontBox.Name = "fontBox";
-            this.fontBox.Size = new System.Drawing.Size(96, 20);
-            this.fontBox.TabIndex = 13;
+            this.cursorBox.Location = new System.Drawing.Point(218, 35);
+            this.cursorBox.Name = "cursorBox";
+            this.cursorBox.Size = new System.Drawing.Size(92, 20);
+            this.cursorBox.TabIndex = 15;
             // 
             // MtMdm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(937, 627);
+            this.ClientSize = new System.Drawing.Size(1287, 627);
             this.Controls.Add(this.termH19);
             this.Controls.Add(this.panel1);
             this.KeyPreview = true;
@@ -239,6 +262,8 @@
         private System.Windows.Forms.PictureBox termH19;
         private System.Windows.Forms.Button btnFont;
         private System.Windows.Forms.TextBox fontBox;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.TextBox cursorBox;
     }
 }
 
