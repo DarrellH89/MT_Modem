@@ -17,6 +17,8 @@ using System.Runtime.InteropServices;
 using System.Drawing.Drawing2D;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Drawing.Imaging;
+using System.Runtime.CompilerServices;
+//using System.Windows.Forms.Timer;
 
 namespace MT_MDM
 {
@@ -32,21 +34,37 @@ namespace MT_MDM
         private char[] bufTerm = new char[80 * 25 + 100];
         private byte[] buf = new byte[bufSize];
         private string fontPath = "";
+        //
+        // not used
         [DllImport("KERNEL32.DLL", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool AllocConsole();
+        // end not used
         // Display variables
-        private static int numCol = 80, numRow = 25, charWidth = 8, charHeight = 10;
+        private static int numCol = 80, 
+                           numRow = 25, 
+                           fontWidth = 8, 
+                           fontHeight = 10;
+        private static int charWidth = fontWidth* 2-2,          // # of pixels, 4 pixels per point
+                           charHeight = (fontHeight * 2+8) +8;
                 // 2 pixels per bit, 2 pixel spacer
-        private int minW = numCol * (charWidth * 2+2), minH = numRow * (charHeight * 2 + 2);
+        private int minW = numCol * charWidth +100 , 
+                    minH = numRow * charHeight ;
+        Color h19Color = Color.FromArgb(255, 0, 250, 0);
         Bitmap bm;
         GCHandle bmPixels;
         private UInt32[] bmPixMap;
         int cursorX = 0;        // Current cursor X position 80x25 grid
         int cursorY = 0;        // Current cursor Y position
+        int cursorXlast = 0,    // last update cursor location
+            cursorYlast = 0;
         bool ctlE = false;
+        bool bmDirty = true;
         //
-
+        // Timers
+        private bool cursorVisible = true;
+        private static Timer cursorTimer, h19Timer;
+   
         //
         //***************** Form Controls ****************************//
         public MtMdm()
@@ -183,6 +201,14 @@ namespace MT_MDM
                 for (y = 0; y < bm.Height; y++)
                     bm.SetPixel(x, y, newColor);
             termH19.Image = bm;
+            cursorTimer = new Timer();   
+            cursorTimer.Tick += new EventHandler(cursorUpdate);
+            cursorTimer.Interval = 2000;    // 2 second interval
+            cursorTimer.Start();
+            h19Timer = new Timer();
+            h19Timer.Tick += new EventHandler(displayUpdate);
+            h19Timer.Interval = 16; // 60Hz = 16.67ms)
+            h19Timer.Start();
         }
         private void displayChar(byte ch)
         {
@@ -194,14 +220,14 @@ namespace MT_MDM
             {
                 if (ch > 0x1f && ch < 0x80)
                 {
-                    int cx = cursorX * (charWidth * 2-2);
-                    int cy = cursorY * (charHeight * 2 + 8);
+                    int cx = cursorX * charWidth;
+                    int cy = cursorY * charHeight;
                     int x, y, ptrFont, t;
                     int mask = 128;
 
 
                     ptrFont = ch * 16;
-                    Color newColor = Color.FromArgb(0, 250, 0);
+                    
                     for (y = 0; y < 10; y++)
                     {
                         mask = 128;
@@ -211,10 +237,10 @@ namespace MT_MDM
                             t = h19.h19Font[ptrFont];
                             if ((h19.h19Font[ptrFont] & mask) > 1)
                             {
-                                bm.SetPixel(cx + x*2, cy + y, newColor);
-                                bm.SetPixel(cx + x*2 + 1, cy + y, newColor); 
-                                bm.SetPixel(cx + x*2, cy + y+1, newColor);
-                                bm.SetPixel(cx + x*2 + 1, cy + y + 1, newColor);
+                                bm.SetPixel(cx + x*2, cy + y, h19Color);
+                                bm.SetPixel(cx + x*2 + 1, cy + y, h19Color); 
+                                bm.SetPixel(cx + x*2, cy + y+1, h19Color);
+                                bm.SetPixel(cx + x*2 + 1, cy + y + 1, h19Color);
                             }
                             //cx += 2;
                             mask = mask / 2;
@@ -229,12 +255,57 @@ namespace MT_MDM
                         cursorY ++;
                     }
 
-                    termH19.Image = bm; 
+                    bmDirty = true;
+                    //termH19.Image = bm; 
                     Invoke(new Action(() => { 
                         cursorBox.Text = cursorX.ToString() + "x" + cursorY.ToString(); 
 
                         }));              
 
+                }
+            }
+        }
+
+        private void cursorUpdate(Object myObject,
+                                            EventArgs myEventArgs)
+        {
+            Color offColor = Color.FromArgb(0, 0, 0);
+            lock (bm)
+            {
+                cursorVisible = !cursorVisible;
+                drawCursor(cursorVisible ? h19Color : offColor);
+                bmDirty = true;
+            }
+        }
+        private void drawCursor (Color what)
+        {
+            int cx = cursorX * charWidth ,
+                cy = cursorY * charHeight + charHeight,
+                cxlast = cursorXlast * charWidth,
+                cylast = cursorYlast * charHeight + charHeight;
+            Color offColor = Color.FromArgb(0, 0, 0);
+            lock (bm)
+            {
+                if ((cursorX != cursorXlast) || (cursorY != cursorYlast))        // cursor moved
+                {
+                    for (int j = 0; j < 16; j++)
+                        bm.SetPixel(cxlast + j, cylast, offColor);
+                    cursorYlast = cursorY;
+                    cursorXlast = cursorX;
+                }
+                for (int j = 0; j < 16; j++)
+                     bm.SetPixel(cx + j, cy, what);
+            }
+        }
+        private void displayUpdate(Object myObject,
+                                            EventArgs myEventArgs)
+        {
+            if (bmDirty)
+            {
+                lock (termH19)
+                {
+                    termH19.Refresh();
+                    bmDirty = false;
                 }
             }
         }
