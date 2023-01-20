@@ -38,12 +38,14 @@
             this.BtnYmodem = new System.Windows.Forms.Button();
             this.btnTerm = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.cursorBox = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
             this.fontBox = new System.Windows.Forms.TextBox();
             this.btnFont = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.termH19 = new System.Windows.Forms.PictureBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.cursorBox = new System.Windows.Forms.TextBox();
+            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.termH19)).BeginInit();
             this.SuspendLayout();
@@ -172,6 +174,22 @@
             this.panel1.TabIndex = 10;
             this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
             // 
+            // cursorBox
+            // 
+            this.cursorBox.Location = new System.Drawing.Point(218, 35);
+            this.cursorBox.Name = "cursorBox";
+            this.cursorBox.Size = new System.Drawing.Size(92, 20);
+            this.cursorBox.TabIndex = 15;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(221, 12);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(37, 13);
+            this.label4.TabIndex = 14;
+            this.label4.Text = "Cursor";
+            // 
             // fontBox
             // 
             this.fontBox.Location = new System.Drawing.Point(778, 34);
@@ -202,36 +220,33 @@
             // 
             // termH19
             // 
-            this.termH19.Dock = System.Windows.Forms.DockStyle.Top;
-            this.termH19.Location = new System.Drawing.Point(0, 0);
-            this.termH19.MinimumSize = new System.Drawing.Size(600, 300);
+            this.termH19.Location = new System.Drawing.Point(144, 217);
+            this.termH19.MinimumSize = new System.Drawing.Size(200, 200);
             this.termH19.Name = "termH19";
-            this.termH19.Size = new System.Drawing.Size(1287, 548);
-            this.termH19.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.termH19.Size = new System.Drawing.Size(676, 299);
             this.termH19.TabIndex = 11;
             this.termH19.TabStop = false;
+            this.termH19.Click += new System.EventHandler(this.termH19_Click);
             // 
-            // label4
+            // richTextBox1
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(221, 12);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(37, 13);
-            this.label4.TabIndex = 14;
-            this.label4.Text = "Cursor";
-            // 
-            // cursorBox
-            // 
-            this.cursorBox.Location = new System.Drawing.Point(218, 35);
-            this.cursorBox.Name = "cursorBox";
-            this.cursorBox.Size = new System.Drawing.Size(92, 20);
-            this.cursorBox.TabIndex = 15;
+            this.richTextBox1.BackColor = System.Drawing.SystemColors.InfoText;
+            this.richTextBox1.Dock = System.Windows.Forms.DockStyle.Top;
+            this.richTextBox1.Font = new System.Drawing.Font("Heathkit19", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.richTextBox1.ForeColor = System.Drawing.Color.LawnGreen;
+            this.richTextBox1.Location = new System.Drawing.Point(0, 0);
+            this.richTextBox1.Name = "richTextBox1";
+            this.richTextBox1.Size = new System.Drawing.Size(1119, 472);
+            this.richTextBox1.TabIndex = 12;
+            this.richTextBox1.Text = "";
+            this.richTextBox1.WordWrap = false;
             // 
             // MtMdm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1287, 627);
+            this.ClientSize = new System.Drawing.Size(1119, 627);
+            this.Controls.Add(this.richTextBox1);
             this.Controls.Add(this.termH19);
             this.Controls.Add(this.panel1);
             this.KeyPreview = true;
@@ -264,6 +279,8 @@
         private System.Windows.Forms.TextBox fontBox;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TextBox cursorBox;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.Windows.Forms.RichTextBox richTextBox1;
     }
 }
 

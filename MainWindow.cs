@@ -18,6 +18,7 @@ using System.Drawing.Drawing2D;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Drawing.Imaging;
 
+
 namespace MT_MDM
 {
     public partial class MtMdm : Form
@@ -144,7 +145,7 @@ namespace MT_MDM
                 ch[0] += 0x20;
             if (online)                  // might need to check if Term key clicked
                 displayChar(ch[0]);
-            serialPort.Write(ch, 0,1);
+           // serialPort.Write(ch, 0,1);
 
         }
 
@@ -184,7 +185,7 @@ namespace MT_MDM
                     bm.SetPixel(x, y, newColor);
             termH19.Image = bm;
         }
-        private void displayChar(byte ch)
+        private void displayChar1(byte ch)
         {
             // Font 8 x 10
             //char ch;
@@ -238,8 +239,28 @@ namespace MT_MDM
                 }
             }
         }
-       //
-       //****************** Serial Port Functions *******************
+        private void displayChar(byte ch)
+        {
+            // Font 8 x 10
+            //char ch;
+            int charSize = charWidth * 2;
+            richTextBox1.Text += (char)ch;
+            cursorX++;
+            if(cursorX > 80)
+            {
+                cursorX = 0;
+                cursorY++;
+            }
+
+                    Invoke(new Action(() => {
+                        cursorBox.Text = cursorX.ToString() + "x" + cursorY.ToString();
+                    }));
+
+
+            
+        }
+        //
+        //****************** Serial Port Functions *******************
         private void RefreshPortList()
         {
             ComPort.Items.Clear();
@@ -406,6 +427,11 @@ namespace MT_MDM
 
             //save the config file changes
             config.Save();
+        }
+
+        private void termH19_Click(object sender, EventArgs e)
+        {
+
         }
 
         /// <summary>
