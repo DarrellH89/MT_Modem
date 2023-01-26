@@ -43,15 +43,15 @@
             this.fontBox = new System.Windows.Forms.TextBox();
             this.btnFont = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
-            this.termH19 = new System.Windows.Forms.PictureBox();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
+            this.h19Term = new System.Windows.Forms.RichTextBox();
+            this.textBox1 = new System.Windows.Forms.TextBox();
             this.panel1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.termH19)).BeginInit();
             this.SuspendLayout();
             // 
             // ComPort
             // 
+            this.ComPort.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.ComPort.FormattingEnabled = true;
             this.ComPort.Location = new System.Drawing.Point(86, 5);
             this.ComPort.Name = "ComPort";
@@ -149,7 +149,6 @@
             this.btnTerm.TabIndex = 9;
             this.btnTerm.Text = "Terminal";
             this.btnTerm.UseVisualStyleBackColor = true;
-            this.btnTerm.Click += new System.EventHandler(this.btnTerm_Click);
             // 
             // panel1
             // 
@@ -168,7 +167,7 @@
             this.panel1.Controls.Add(this.BtnDrop);
             this.panel1.Controls.Add(this.BtnConnect);
             this.panel1.Controls.Add(this.label1);
-            this.panel1.Location = new System.Drawing.Point(12, 557);
+            this.panel1.Location = new System.Drawing.Point(12, 608);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(895, 58);
             this.panel1.TabIndex = 10;
@@ -218,46 +217,47 @@
             this.label3.Text = "Status";
             this.label3.Click += new System.EventHandler(this.label3_Click);
             // 
-            // termH19
+            // h19Term
             // 
-            this.termH19.Location = new System.Drawing.Point(144, 217);
-            this.termH19.MinimumSize = new System.Drawing.Size(200, 200);
-            this.termH19.Name = "termH19";
-            this.termH19.Size = new System.Drawing.Size(676, 299);
-            this.termH19.TabIndex = 11;
-            this.termH19.TabStop = false;
-            this.termH19.Click += new System.EventHandler(this.termH19_Click);
+            this.h19Term.BackColor = System.Drawing.SystemColors.InfoText;
+            this.h19Term.Dock = System.Windows.Forms.DockStyle.Top;
+            this.h19Term.EnableAutoDragDrop = true;
+            this.h19Term.Font = new System.Drawing.Font("Heathkit19", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.h19Term.ForeColor = System.Drawing.Color.LawnGreen;
+            this.h19Term.Location = new System.Drawing.Point(0, 0);
+            this.h19Term.Name = "h19Term";
+            this.h19Term.RightMargin = 910;
+            this.h19Term.Size = new System.Drawing.Size(1121, 600);
+            this.h19Term.TabIndex = 12;
+            this.h19Term.Text = "";
+            this.h19Term.WordWrap = false;
+            this.h19Term.MouseCaptureChanged += new System.EventHandler(this.h19Term_MouseCaptureChanged);
+            this.h19Term.Resize += new System.EventHandler(this.h19Term_Resize);
             // 
-            // richTextBox1
+            // textBox1
             // 
-            this.richTextBox1.BackColor = System.Drawing.SystemColors.InfoText;
-            this.richTextBox1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.richTextBox1.Font = new System.Drawing.Font("Heathkit19", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBox1.ForeColor = System.Drawing.Color.LawnGreen;
-            this.richTextBox1.Location = new System.Drawing.Point(0, 0);
-            this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.Size = new System.Drawing.Size(1119, 472);
-            this.richTextBox1.TabIndex = 12;
-            this.richTextBox1.Text = "";
-            this.richTextBox1.WordWrap = false;
+            this.textBox1.Location = new System.Drawing.Point(941, 632);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(151, 20);
+            this.textBox1.TabIndex = 13;
             // 
             // MtMdm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1119, 627);
-            this.Controls.Add(this.richTextBox1);
-            this.Controls.Add(this.termH19);
+            this.ClientSize = new System.Drawing.Size(1121, 678);
+            this.Controls.Add(this.textBox1);
+            this.Controls.Add(this.h19Term);
             this.Controls.Add(this.panel1);
             this.KeyPreview = true;
             this.Name = "MtMdm";
             this.Text = "MT Modem";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MtMdm_FormClosing);
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MtMdm_KeyDown);
+            this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.MtMdm_KeyPress);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.termH19)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -274,13 +274,13 @@
         private System.Windows.Forms.Button btnTerm;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.PictureBox termH19;
         private System.Windows.Forms.Button btnFont;
         private System.Windows.Forms.TextBox fontBox;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TextBox cursorBox;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
-        private System.Windows.Forms.RichTextBox richTextBox1;
+        private System.Windows.Forms.TextBox textBox1;
+        protected System.Windows.Forms.RichTextBox h19Term;
     }
 }
 

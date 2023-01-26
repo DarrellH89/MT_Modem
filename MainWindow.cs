@@ -25,17 +25,20 @@ namespace MT_MDM
     {
         private SerialPort serialPort = new SerialPort();
         Configuration config = ConfigurationManager.OpenExeConfiguration(Application.ExecutablePath);
-        int textCnt = 0;
+
         string textStr = "";
         bool ymodem = false;
         bool online = false;
-        private const int bufSize = 1024 * 8;
-        private char[] bufTerm = new char[80 * 25 + 100];
-        private byte[] buf = new byte[bufSize];
+        bool mouseCapture = false;
+        //private const int bufSize = 1024 * 8;
+        //private byte[] buf = new byte[bufSize];
+        //private char[] bufTerm = new char[80 * 25 + 100];
+        private Byte[] display = new Byte[100*81];
+
         private string fontPath = "";
-        [DllImport("KERNEL32.DLL", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool AllocConsole();
+        //[DllImport("KERNEL32.DLL", SetLastError = true)]
+        //[return: MarshalAs(UnmanagedType.Bool)]
+        //static extern bool AllocConsole();
         // Display variables
         private static int numCol = 80, numRow = 25, charWidth = 8, charHeight = 10;
                 // 2 pixels per bit, 2 pixel spacer
@@ -44,8 +47,11 @@ namespace MT_MDM
         GCHandle bmPixels;
         private UInt32[] bmPixMap;
         int cursorX = 0;        // Current cursor X position 80x25 grid
-        int cursorY = 0;        // Current cursor Y position
+        int cursorY = 75;        // Current cursor Y position
         bool ctlE = false;
+        // RichTextBox display
+        //string[,] rtbDisplay = new string[100,80];
+        private float defaultRtbH, defaultRtbW;
         //
 
         //
@@ -60,6 +66,10 @@ namespace MT_MDM
             display_init();
             statusBox.Enabled= false;
 
+            //richTextBox1.Select(1, 1);
+            h19Term.Focus();
+            defaultRtbH = h19Term.Size.Height;
+            defaultRtbW = h19Term.Size.Width;
         }
         private void BtnConnect_Click(object sender, EventArgs e)
         {
@@ -85,8 +95,7 @@ namespace MT_MDM
                     MessageBoxIcon.Error);
             }
         }
-        
-        //
+
         //***************** Terminal mode - NOT CURRENTLY NEEDED - WILL DELETE
         private void btnTerm_Click(object sender, EventArgs e)
         {
@@ -135,19 +144,6 @@ namespace MT_MDM
 
         }
 
-        private void MtMdm_KeyDown(object sender, KeyEventArgs e)
-        {
-            byte[] ch = new byte[4];
-            //if (e.Control && e.KeyCode == Keys.E)
-            //    Close();
-            ch[0] = (byte)e.KeyCode;
-            if (!e.Shift)
-                ch[0] += 0x20;
-            if (online)                  // might need to check if Term key clicked
-                displayChar(ch[0]);
-           // serialPort.Write(ch, 0,1);
-
-        }
 
         private void label3_Click(object sender, EventArgs e)
         {
@@ -168,97 +164,7 @@ namespace MT_MDM
             saveCurrentSessionSettings();
         }
         //
-        //************ Terminal Display Functions ************************
-
-
-        private void display_init()
-        {
-            int x, y;
-
-            //Rectangle rect = Screen.PrimaryScreen.Bounds;
-            bmPixMap = new UInt32[minW * minH];
-            bmPixels = GCHandle.Alloc(bmPixMap, GCHandleType.Pinned);
-            bm = new Bitmap(minW, minH, minW * sizeof(Int32), PixelFormat.Format32bppPArgb, bmPixels.AddrOfPinnedObject());
-            Color newColor = Color.FromArgb(0, 0, 0);
-            for (x = 0; x < bm.Width; x++)
-                for (y = 0; y < bm.Height; y++)
-                    bm.SetPixel(x, y, newColor);
-            termH19.Image = bm;
-        }
-        private void displayChar1(byte ch)
-        {
-            // Font 8 x 10
-            //char ch;
-            int charSize = charWidth*2;
-
-            lock (bm)
-            {
-                if (ch > 0x1f && ch < 0x80)
-                {
-                    int cx = cursorX * (charWidth * 2-2);
-                    int cy = cursorY * (charHeight * 2 + 8);
-                    int x, y, ptrFont, t;
-                    int mask = 128;
-
-
-                    ptrFont = ch * 16;
-                    Color newColor = Color.FromArgb(0, 250, 0);
-                    for (y = 0; y < 10; y++)
-                    {
-                        mask = 128;
-                        for (x = 0; x < 8; x++)
-                        {
-
-                            t = h19.h19Font[ptrFont];
-                            if ((h19.h19Font[ptrFont] & mask) > 1)
-                            {
-                                bm.SetPixel(cx + x*2, cy + y, newColor);
-                                bm.SetPixel(cx + x*2 + 1, cy + y, newColor); 
-                                bm.SetPixel(cx + x*2, cy + y+1, newColor);
-                                bm.SetPixel(cx + x*2 + 1, cy + y + 1, newColor);
-                            }
-                            //cx += 2;
-                            mask = mask / 2;
-                        }
-                        cy += 2;
-                        ptrFont++;
-                    }
-                    cursorX ++;
-                    if (cursorX == numCol )
-                    {
-                        cursorX = 0;
-                        cursorY ++;
-                    }
-
-                    termH19.Image = bm; 
-                    Invoke(new Action(() => { 
-                        cursorBox.Text = cursorX.ToString() + "x" + cursorY.ToString(); 
-
-                        }));              
-
-                }
-            }
-        }
-        private void displayChar(byte ch)
-        {
-            // Font 8 x 10
-            //char ch;
-            int charSize = charWidth * 2;
-            richTextBox1.Text += (char)ch;
-            cursorX++;
-            if(cursorX > 80)
-            {
-                cursorX = 0;
-                cursorY++;
-            }
-
-                    Invoke(new Action(() => {
-                        cursorBox.Text = cursorX.ToString() + "x" + cursorY.ToString();
-                    }));
-
-
-            
-        }
+    
         //
         //****************** Serial Port Functions *******************
         private void RefreshPortList()
@@ -367,7 +273,6 @@ namespace MT_MDM
             //scanButton.Enabled = false;
             BtnConnect.Enabled = false;
             BtnDrop.Enabled = true;
-            termH19.Enabled = true;
             statusBox.Text = "Connected.";
         }
 
@@ -381,7 +286,6 @@ namespace MT_MDM
             //scanButton.Enabled = false;
             BtnConnect.Enabled = true;
             BtnDrop.Enabled = false;
-            termH19.Enabled = false;
             statusBox.Text = "Not Connected.";
         }
         //
@@ -389,8 +293,67 @@ namespace MT_MDM
         //
         private void BtnYmodem_Click(object sender, EventArgs e)
         {
+    
 
         }
+        //************ Terminal Display Functions ************************
+        private void MtMdm_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            byte[] ch = new byte[4];
+            //if (e.Control && e.KeyCode == Keys.E)
+            //    Close();
+            ch[0] = (byte)e.KeyChar;
+            Debug.WriteLine("MtMdm: char {0}, value {1}", (char)ch[0], BitConverter.ToString(ch));
+            displayChar(ch[0]);
+
+            //if (!e.Shift)
+            //    ch[0] += 0x20;
+            //if (online)                  // might need to check if Term key clicked
+            //    displayChar(ch[0]);
+            // serialPort.Write(ch, 0,1);
+        }
+
+        private void h19Term_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            byte[] ch = new byte[4];
+            //if (e.Control && e.KeyCode == Keys.E)
+            //    Close();
+            ch[0] = (byte)e.KeyChar;
+            Debug.WriteLine("h19Term: char {0}, value {1}", (char)ch[0], BitConverter.ToString(ch));
+            displayChar(ch[0]);
+            //if (!e.Shift)
+            //    ch[0] += 0x20;
+            //if (online)                  // might need to check if Term key clicked
+            //    displayChar(ch[0]);
+            // serialPort.Write(ch, 0,1);
+        }
+
+        private void h19Term_MouseCaptureChanged(object sender, EventArgs e)
+        {
+            if (mouseCapture)
+            {
+                textBox1.Text = "";
+                mouseCapture = false;
+            }
+            else
+            {
+                textBox1.Text = "Mouse Capture";
+                mouseCapture = true;
+            }
+        }
+
+
+        private void h19Term_Resize(object sender, EventArgs e)
+        {
+            float newH, newW;
+            newH = h19Term.Size.Height;
+            newW = h19Term.Size.Width;
+            if (defaultRtbH * defaultRtbW > 0)
+                h19Term.ZoomFactor = (newH * newW) / (defaultRtbW * defaultRtbH);
+        }
+
+
+
         //
         //*************************** Configuration files
         //
@@ -429,10 +392,12 @@ namespace MT_MDM
             config.Save();
         }
 
-        private void termH19_Click(object sender, EventArgs e)
-        {
 
-        }
+
+ 
+
+
+
 
         /// <summary>
         /// USE TO LOAD PREVIOUS SESSION SETTINGS FROM CONFIG FILE
