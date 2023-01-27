@@ -7,5 +7,6 @@ MT Modem is a terminal emulation program that will support Ymodem transfers (fut
 ## Status
 
 26 Jan 2023 - RichTextBox solution using TrueType Font developed from H-19 Font ROM. Basic Terminal capability (Serial connection, basic screen handling)
+
 16 Jan 2023 - Initial version that supports bare bones terminal communication via serial port. Terminal is bitmapped using original Heathkit H-19 Font ROM
 
