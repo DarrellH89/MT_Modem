@@ -3,3 +3,4 @@ obj/*
 bin/debug/*
 bin/release/*.lnk
 packages/*
+thoughts/
