@@ -36,7 +36,7 @@
             this.BtnDrop = new System.Windows.Forms.Button();
             this.statusBox = new System.Windows.Forms.TextBox();
             this.BtnYmodem = new System.Windows.Forms.Button();
-            this.btnTerm = new System.Windows.Forms.Button();
+            this.btnClrScreen = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
             this.cursorBox = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -57,7 +57,6 @@
             this.ComPort.Name = "ComPort";
             this.ComPort.Size = new System.Drawing.Size(114, 21);
             this.ComPort.TabIndex = 0;
-            this.ComPort.SelectedIndexChanged += new System.EventHandler(this.ComPort_SelectedIndexChanged);
             // 
             // BaudRate
             // 
@@ -81,7 +80,6 @@
             this.BaudRate.Name = "BaudRate";
             this.BaudRate.Size = new System.Drawing.Size(114, 21);
             this.BaudRate.TabIndex = 1;
-            this.BaudRate.SelectedIndexChanged += new System.EventHandler(this.BaudRate_SelectedIndexChanged);
             // 
             // label1
             // 
@@ -129,7 +127,6 @@
             this.statusBox.Name = "statusBox";
             this.statusBox.Size = new System.Drawing.Size(117, 20);
             this.statusBox.TabIndex = 7;
-            this.statusBox.TextChanged += new System.EventHandler(this.statusBox_TextChanged);
             // 
             // BtnYmodem
             // 
@@ -141,14 +138,15 @@
             this.BtnYmodem.UseVisualStyleBackColor = true;
             this.BtnYmodem.Click += new System.EventHandler(this.BtnYmodem_Click);
             // 
-            // btnTerm
+            // btnClrScreen
             // 
-            this.btnTerm.Location = new System.Drawing.Point(512, 0);
-            this.btnTerm.Name = "btnTerm";
-            this.btnTerm.Size = new System.Drawing.Size(81, 23);
-            this.btnTerm.TabIndex = 9;
-            this.btnTerm.Text = "Terminal";
-            this.btnTerm.UseVisualStyleBackColor = true;
+            this.btnClrScreen.Location = new System.Drawing.Point(512, 0);
+            this.btnClrScreen.Name = "btnClrScreen";
+            this.btnClrScreen.Size = new System.Drawing.Size(81, 23);
+            this.btnClrScreen.TabIndex = 9;
+            this.btnClrScreen.Text = "Clear Screen";
+            this.btnClrScreen.UseVisualStyleBackColor = true;
+            this.btnClrScreen.Click += new System.EventHandler(this.btnClrScreen_Click);
             // 
             // panel1
             // 
@@ -159,7 +157,7 @@
             this.panel1.Controls.Add(this.btnFont);
             this.panel1.Controls.Add(this.label2);
             this.panel1.Controls.Add(this.label3);
-            this.panel1.Controls.Add(this.btnTerm);
+            this.panel1.Controls.Add(this.btnClrScreen);
             this.panel1.Controls.Add(this.statusBox);
             this.panel1.Controls.Add(this.BtnYmodem);
             this.panel1.Controls.Add(this.ComPort);
@@ -167,11 +165,10 @@
             this.panel1.Controls.Add(this.BtnDrop);
             this.panel1.Controls.Add(this.BtnConnect);
             this.panel1.Controls.Add(this.label1);
-            this.panel1.Location = new System.Drawing.Point(12, 608);
+            this.panel1.Location = new System.Drawing.Point(12, 651);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(895, 58);
             this.panel1.TabIndex = 10;
-            this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
             // 
             // cursorBox
             // 
@@ -185,9 +182,9 @@
             this.label4.AutoSize = true;
             this.label4.Location = new System.Drawing.Point(221, 12);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(37, 13);
+            this.label4.Size = new System.Drawing.Size(65, 13);
             this.label4.TabIndex = 14;
-            this.label4.Text = "Cursor";
+            this.label4.Text = "Cursor X x Y";
             // 
             // fontBox
             // 
@@ -215,7 +212,6 @@
             this.label3.Size = new System.Drawing.Size(54, 17);
             this.label3.TabIndex = 8;
             this.label3.Text = "Status";
-            this.label3.Click += new System.EventHandler(this.label3_Click);
             // 
             // h19Term
             // 
@@ -227,10 +223,12 @@
             this.h19Term.Location = new System.Drawing.Point(0, 0);
             this.h19Term.Name = "h19Term";
             this.h19Term.RightMargin = 910;
-            this.h19Term.Size = new System.Drawing.Size(1121, 600);
+            this.h19Term.Size = new System.Drawing.Size(1121, 630);
             this.h19Term.TabIndex = 12;
             this.h19Term.Text = "";
             this.h19Term.WordWrap = false;
+            this.h19Term.KeyDown += new System.Windows.Forms.KeyEventHandler(this.h19Term_KeyDown);
+            this.h19Term.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.h19Term_KeyPress);
             this.h19Term.MouseCaptureChanged += new System.EventHandler(this.h19Term_MouseCaptureChanged);
             this.h19Term.Resize += new System.EventHandler(this.h19Term_Resize);
             // 
@@ -245,7 +243,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1121, 678);
+            this.ClientSize = new System.Drawing.Size(1121, 721);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.h19Term);
             this.Controls.Add(this.panel1);
@@ -253,7 +251,6 @@
             this.Name = "MtMdm";
             this.Text = "MT Modem";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MtMdm_FormClosing);
-            this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.MtMdm_KeyPress);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.ResumeLayout(false);
@@ -271,7 +268,7 @@
         private System.Windows.Forms.Button BtnDrop;
         private System.Windows.Forms.TextBox statusBox;
         private System.Windows.Forms.Button BtnYmodem;
-        private System.Windows.Forms.Button btnTerm;
+        private System.Windows.Forms.Button btnClrScreen;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Button btnFont;
@@ -280,7 +277,7 @@
         private System.Windows.Forms.TextBox cursorBox;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private System.Windows.Forms.TextBox textBox1;
-        protected System.Windows.Forms.RichTextBox h19Term;
+        protected internal System.Windows.Forms.RichTextBox h19Term;
     }
 }
 

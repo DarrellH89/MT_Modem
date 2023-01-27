@@ -2,6 +2,7 @@
 using System;
 using System.Windows.Forms;
 using System.Diagnostics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace MT_MDM
 {
@@ -15,82 +16,26 @@ namespace MT_MDM
             int x, y;
 
             //
-            // 100 rows by 80 columns. 0xa in position 81 causes textbox to start newline
+            // 100 rows by 80 columns. 0xa in position maxCol (81) causes textbox to start newline
             //
             for (int j = 0; j < 100; j++)
             {
                 int k;
-                display[j * 81] = (byte)((j / 10) % 10 + 0x30);
-                display[j * 81 + 1] = (byte)(j % 10 + 0x30);
-                for (k = 2; k < 80; k++)
-                    display[j * 81 + k] = 0x20;
-                if (j < 99)
-                    display[j * 81 + k] = 0X0a;
+                display[j * maxCol] = (byte)((j / 10) % 10 + 0x30);     // For testing purposes
+                display[j * maxCol + 1] = (byte)(j % 10 + 0x30);
+                for (k = 0; k < numCol; k++)            // set start at 2 if testing screen
+                    display[j * maxCol + k] = 0x20;
+                if (j < maxRow-1)
+                    display[j * maxCol + k] = 0X0a;
             }
             h19Term.Text = Encoding.UTF8.GetString(display);
             h19Term.SelectionStart = h19Term.Text.Length;
             h19Term.ScrollToCaret();
         }
-        //private void displayChar1(byte ch)
-        //{
-        //    // Font 8 x 10
-        //    //char ch;
-        //    int charSize = charWidth*2;
-
-        //    lock (bm)
-        //    {
-        //        if (ch > 0x1f && ch < 0x80)
-        //        {
-        //            int cx = cursorX * (charWidth * 2-2);
-        //            int cy = cursorY * (charHeight * 2 + 8);
-        //            int x, y, ptrFont, t;
-        //            int mask = 128;
-
-
-        //            ptrFont = ch * 16;
-        //            Color newColor = Color.FromArgb(0, 250, 0);
-        //            for (y = 0; y < 10; y++)
-        //            {
-        //                mask = 128;
-        //                for (x = 0; x < 8; x++)
-        //                {
-
-        //                    t = h19.h19Font[ptrFont];
-        //                    if ((h19.h19Font[ptrFont] & mask) > 1)
-        //                    {
-        //                        bm.SetPixel(cx + x*2, cy + y, newColor);
-        //                        bm.SetPixel(cx + x*2 + 1, cy + y, newColor); 
-        //                        bm.SetPixel(cx + x*2, cy + y+1, newColor);
-        //                        bm.SetPixel(cx + x*2 + 1, cy + y + 1, newColor);
-        //                    }
-        //                    //cx += 2;
-        //                    mask = mask / 2;
-        //                }
-        //                cy += 2;
-        //                ptrFont++;
-        //            }
-        //            cursorX ++;
-        //            if (cursorX == numCol )
-        //            {
-        //                cursorX = 0;
-        //                cursorY ++;
-        //            }
-
-        //            termH19.Image = bm; 
-        //            Invoke(new Action(() => { 
-        //                cursorBox.Text = cursorX.ToString() + "x" + cursorY.ToString(); 
-
-        //                }));              
-
-        //        }
-        //    }
-        //}
+ 
         private void displayChar(byte ch)
         {
-            // Font 8 x 10
-            //char ch;
-            //int charSize = charWidth * 2;
-            // display = 100 x 80
+            // display = 100 x 80, Start writing on line 75. First 75 lines for future scroll capabilty
             switch (ch)
             {
                 case CR:
@@ -99,35 +44,58 @@ namespace MT_MDM
                     cursorY++;
                     break;
                 case DEL:
+                    int j;
+                    for (j = cursorY * maxCol + cursorX; j < cursorY * maxCol+numCol; j++)
+                        display[j] = display[j + 1];
+                    display[j] = 0x20; // does not wrap text from next line
+                    break;
+
                 case BS:
-                    if (cursorX > 0)
+                    bool chgXY = false;
+                    if (cursorX > 0 && cursorX < numCol )
+                    {
                         cursorX--;
+                        chgXY = true;
+                    }
                     else
                     {
-                        cursorX = 80;
-                        cursorY--;
+                        if (cursorY > 75)
+                        {
+                            cursorY--;
+                            cursorX = numCol-1;
+                            chgXY = true;
+                        }
                     }
-                    display[cursorY * 81 + cursorX] = SP;
+                    if(chgXY)
+                        display[cursorY * maxCol+ cursorX] = SP;
                     break;
                 default:
-                    display[cursorY * 81 + cursorX] = ch;
+                    display[cursorY * maxCol+ cursorX] = ch;
                     cursorX++;
-                    if (cursorX > 79)
+                    if (cursorX == numCol)
                     {
                         cursorX = 0;
                         cursorY++;
                     }
                     break;
             }
-            h19Term.Text = Encoding.UTF8.GetString(display);
-            h19Term.SelectionStart = cursorY * 81 + cursorX;//h19Term.Text.Length;
-            h19Term.ScrollToCaret();
+            int p1 = h19Term.GetFirstCharIndexFromLine(cursorY);
+            h19Term.Select(p1,  maxCol);        // Select line of text in RTB
+            byte[] temp = new byte[maxCol];
+            Buffer.BlockCopy(display, p1, temp, 0, maxCol);
+            h19Term.SelectedText = Encoding.UTF8.GetString(temp);
+            h19Term.SelectionStart = cursorY * maxCol + cursorX;        // set the focus for the cursor
+            //h19Term.ScrollToCaret();          // causes line jump in terminal window
+            //
+            // Update cursor display
+            updateCursorDisplay();
+            
+        }
+        private void updateCursorDisplay()
+        {
             Invoke(new Action(() => {
                 cursorBox.Text = cursorX.ToString() + "x" + (cursorY - 75).ToString();
             }));
-
-
-
         }
        
     }

@@ -30,10 +30,8 @@ namespace MT_MDM
         bool ymodem = false;
         bool online = false;
         bool mouseCapture = false;
-        //private const int bufSize = 1024 * 8;
-        //private byte[] buf = new byte[bufSize];
-        //private char[] bufTerm = new char[80 * 25 + 100];
-        private Byte[] display = new Byte[100*81];
+        private static int maxCol = 81, maxRow = 100;
+        private Byte[] display = new Byte[maxRow*(maxCol)];
 
         private string fontPath = "";
         //[DllImport("KERNEL32.DLL", SetLastError = true)]
@@ -42,15 +40,9 @@ namespace MT_MDM
         // Display variables
         private static int numCol = 80, numRow = 25, charWidth = 8, charHeight = 10;
                 // 2 pixels per bit, 2 pixel spacer
-        private int minW = numCol * (charWidth * 2+2), minH = numRow * (charHeight * 2 + 2);
-        Bitmap bm;
-        GCHandle bmPixels;
-        private UInt32[] bmPixMap;
-        int cursorX = 0;        // Current cursor X position 80x25 grid
+         int cursorX = 0;        // Current cursor X position 80x25 grid
         int cursorY = 75;        // Current cursor Y position
         bool ctlE = false;
-        // RichTextBox display
-        //string[,] rtbDisplay = new string[100,80];
         private float defaultRtbH, defaultRtbW;
         //
 
@@ -64,13 +56,14 @@ namespace MT_MDM
             setDisconnected();
             serialPort.DataReceived += new SerialDataReceivedEventHandler(serialDataReceived);
             display_init();
+            cursorBox.Text = cursorX.ToString() + "x" + (cursorY - 75).ToString();
             statusBox.Enabled= false;
 
             //richTextBox1.Select(1, 1);
             h19Term.Focus();
             defaultRtbH = h19Term.Size.Height;
             defaultRtbW = h19Term.Size.Width;
-        }
+           }
         private void BtnConnect_Click(object sender, EventArgs e)
         {
             {
@@ -83,77 +76,18 @@ namespace MT_MDM
             try
             {
                 serialPort.Open();
-                setConnected();
-                online = true;
-
             }
-            catch (System.IO.IOException)
+            catch (Exception)
             {
                 MessageBox.Show("Could not connect to the COM port selected!",
                     "Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
-        }
-
-        //***************** Terminal mode - NOT CURRENTLY NEEDED - WILL DELETE
-        private void btnTerm_Click(object sender, EventArgs e)
-        {
-            char dataOut;
-            ConsoleKeyInfo dataIn;
-            byte[] data = new byte[5];
-            data[0] = 0;
-
-            if (online)
-            {
-                do
-                {
-                    //AllocConsole();
-                    //if (Console.KeyAvailable)
-                    //{
-                    //    dataIn = Console.ReadKey();
-                    //    data[0] = (byte)dataIn.Key;
-                    //    serialPort.Write(data, 0, 1);
-
-                    //}
-                    // check serial data
-                    if (textStr != null)
-                    {
-                        byte[] bytes = Encoding.ASCII.GetBytes(textStr);
-                        foreach (byte ch in bytes)
-                            displayChar(ch);
-                        textStr = null;
-                    }
-
-                } while (data[0] != 5);
-
-            }
-            else
-            {
-                MessageBox.Show("Not Connected!",
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-
-        }
-        //**************** End code to delete
-
-        private void panel1_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
-
-
-        private void label3_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void statusBox_TextChanged(object sender, EventArgs e)
-        {
-
-        }
+            setConnected();
+            online = true;
+        }       
+     
 
         private void btnFont_Click(object sender, EventArgs e)
         {
@@ -167,6 +101,7 @@ namespace MT_MDM
     
         //
         //****************** Serial Port Functions *******************
+        //
         private void RefreshPortList()
         {
             ComPort.Items.Clear();
@@ -221,32 +156,26 @@ namespace MT_MDM
 
         private void serialDataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            // Overall Processing
-            /*invoke because this event is not in main thead. only main thread can change the
-             *form items. invoke makes a call to the form thread and form thread does what invoke
-             *says. in our case it will write to the history box.
-             * 
-             */
             if (!ymodem)
             {
-                //Invoke(new Action(() =>
-                //{
-                //    //read received message
-                //    string s = serialPort.ReadExisting();
-                //    string msg = "Rcvd " + s.Length + " byte " + s;
-                //    Debug.WriteLine(msg);
-                //    textCnt += s.Length;  // WHAT is this for?
-                //    textStr += s;
-                //}));
                 int data= serialPort.ReadByte();
                 while(data != -1)
                 {
+                    Invoke(new Action(() => {
                     displayChar((byte)data);
-                    data = serialPort.ReadByte();
+                    }));
+
+                    try
+                    {
+                        data = serialPort.ReadByte();
+                    }
+                    catch(Exception ex)
+                    {
+
+                    }
                 }
-      
             }
-            else
+            else                // Ymodem file transfer code
             {
 
             }
@@ -297,35 +226,40 @@ namespace MT_MDM
 
         }
         //************ Terminal Display Functions ************************
+        // main form key press method, not currently used
         private void MtMdm_KeyPress(object sender, KeyPressEventArgs e)
         {
-            byte[] ch = new byte[4];
-            //if (e.Control && e.KeyCode == Keys.E)
-            //    Close();
+            byte[] ch = new byte[1];
             ch[0] = (byte)e.KeyChar;
             Debug.WriteLine("MtMdm: char {0}, value {1}", (char)ch[0], BitConverter.ToString(ch));
             displayChar(ch[0]);
+            e.Handled = true;       // Tell Windows no further action is needed to keep RTB from updating screen
 
-            //if (!e.Shift)
-            //    ch[0] += 0x20;
-            //if (online)                  // might need to check if Term key clicked
-            //    displayChar(ch[0]);
-            // serialPort.Write(ch, 0,1);
         }
 
         private void h19Term_KeyPress(object sender, KeyPressEventArgs e)
         {
-            byte[] ch = new byte[4];
+            byte[] ch = new byte[1];
             //if (e.Control && e.KeyCode == Keys.E)
             //    Close();
             ch[0] = (byte)e.KeyChar;
-            Debug.WriteLine("h19Term: char {0}, value {1}", (char)ch[0], BitConverter.ToString(ch));
+            if (ch[0] > 0x19 && ch[0] < 0x7f)  
+                Debug.WriteLine("h19Term: char {0}, value {1}", (char)ch[0],  BitConverter.ToString(ch));
+            else
+                Debug.WriteLine("h19Term: value {0}", ch[0]);
             displayChar(ch[0]);
-            //if (!e.Shift)
-            //    ch[0] += 0x20;
+
+            e.Handled = true;
             //if (online)                  // might need to check if Term key clicked
             //    displayChar(ch[0]);
-            // serialPort.Write(ch, 0,1);
+            try
+            {
+                serialPort.Write(ch, 0, 1);
+            }
+            catch(Exception ex)
+            {
+
+            }
         }
 
         private void h19Term_MouseCaptureChanged(object sender, EventArgs e)
@@ -340,8 +274,15 @@ namespace MT_MDM
                 textBox1.Text = "Mouse Capture";
                 mouseCapture = true;
             }
+            var s1 = h19Term.SelectedText;
+            if(s1.Length > 0)
+                Clipboard.SetText(h19Term.SelectedText);
         }
 
+        private void h19Term_KeyDown(object sender, KeyEventArgs e)
+        {
+            e.Handled = true;
+        }
 
         private void h19Term_Resize(object sender, EventArgs e)
         {
@@ -350,6 +291,12 @@ namespace MT_MDM
             newW = h19Term.Size.Width;
             if (defaultRtbH * defaultRtbW > 0)
                 h19Term.ZoomFactor = (newH * newW) / (defaultRtbW * defaultRtbH);
+        }
+
+
+        private void btnClrScreen_Click(object sender, EventArgs e)
+        {
+            display_init();
         }
 
 
@@ -391,12 +338,6 @@ namespace MT_MDM
             //save the config file changes
             config.Save();
         }
-
-
-
- 
-
-
 
 
         /// <summary>
@@ -527,6 +468,8 @@ namespace MT_MDM
 
         }
 
+        // No longer needed while using TrueType Font
+        //       
         //******************* Load Font ******************
         void loadFont(string path)
         {
@@ -555,7 +498,7 @@ namespace MT_MDM
             h19.fontOK = true;
         }
 
-        //
+
         //******************* Font Class h19 ************************************
         public partial class h19
         {
