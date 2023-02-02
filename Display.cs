@@ -11,7 +11,7 @@ namespace MT_MDM
         //************ Terminal Display Functions ************************
 
 
-        private void display_init()
+        private void Display_init()
         {
             int x, y;
 
@@ -33,24 +33,25 @@ namespace MT_MDM
             h19Term.ScrollToCaret();
         }
  
-        private void displayChar(byte ch)
+        private void DisplayChar(byte ch)
         {
-            // display = 100 x 80, Start writing on line 75. First 75 lines for future scroll capabilty
+            // display = 100 x 80, Start writing on line 75. First 75 lines for future scroll capability
+            bool displayOK = true;
             switch (ch)
             {
-                case CR:
-                case LF:
+                case A.CR:
+                case A.LF:
                     cursorX = 0;
                     cursorY++;
                     break;
-                case DEL:
+                case A.DEL:
                     int j;
                     for (j = cursorY * maxCol + cursorX; j < cursorY * maxCol+numCol; j++)
                         display[j] = display[j + 1];
                     display[j] = 0x20; // does not wrap text from next line
                     break;
 
-                case BS:
+                case A.BS:
                     bool chgXY = false;
                     if (cursorX > 0 && cursorX < numCol )
                     {
@@ -67,7 +68,12 @@ namespace MT_MDM
                         }
                     }
                     if(chgXY)
-                        display[cursorY * maxCol+ cursorX] = SP;
+                        display[cursorY * maxCol+ cursorX] = A.SP;
+                    break;
+                case A.CAN:
+                case A.ETX:
+                    displayOK = false;
+                    lastKey = ch;
                     break;
                 default:
                     display[cursorY * maxCol+ cursorX] = ch;
@@ -79,19 +85,22 @@ namespace MT_MDM
                     }
                     break;
             }
-            int p1 = h19Term.GetFirstCharIndexFromLine(cursorY);
-            h19Term.Select(p1,  maxCol);        // Select line of text in RTB
-            byte[] temp = new byte[maxCol];
-            Buffer.BlockCopy(display, p1, temp, 0, maxCol);
-            h19Term.SelectedText = Encoding.UTF8.GetString(temp);
-            h19Term.SelectionStart = cursorY * maxCol + cursorX;        // set the focus for the cursor
-            //h19Term.ScrollToCaret();          // causes line jump in terminal window
-            //
-            // Update cursor display
-            updateCursorDisplay();
-            
+
+            if (displayOK)
+            {
+                int p1 = h19Term.GetFirstCharIndexFromLine(cursorY);
+                h19Term.Select(p1,  maxCol);        // Select line of text in RTB
+                byte[] temp = new byte[maxCol];
+                Buffer.BlockCopy(display, p1, temp, 0, maxCol);
+                h19Term.SelectedText = Encoding.UTF8.GetString(temp);
+                h19Term.SelectionStart = cursorY * maxCol + cursorX;        // set the focus for the cursor
+                //h19Term.ScrollToCaret();          // causes line jump in terminal window
+                //
+                // Update cursor display
+                updateCursorXYDisplay();
+            }           
         }
-        private void updateCursorDisplay()
+        private void updateCursorXYDisplay()
         {
             Invoke(new Action(() => {
                 cursorBox.Text = cursorX.ToString() + "x" + (cursorY - 75).ToString();

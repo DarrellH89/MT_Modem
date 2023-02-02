@@ -40,12 +40,13 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.cursorBox = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
-            this.fontBox = new System.Windows.Forms.TextBox();
             this.btnFont = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.h19Term = new System.Windows.Forms.RichTextBox();
             this.textBox1 = new System.Windows.Forms.TextBox();
+            this.label5 = new System.Windows.Forms.Label();
+            this.fontComboBox = new System.Windows.Forms.ComboBox();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -146,14 +147,16 @@
             this.btnClrScreen.TabIndex = 9;
             this.btnClrScreen.Text = "Clear Screen";
             this.btnClrScreen.UseVisualStyleBackColor = true;
-            this.btnClrScreen.Click += new System.EventHandler(this.btnClrScreen_Click);
+            this.btnClrScreen.Click += new System.EventHandler(this.BtnClrScreen_Click);
             // 
             // panel1
             // 
             this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.panel1.Controls.Add(this.fontComboBox);
+            this.panel1.Controls.Add(this.label5);
             this.panel1.Controls.Add(this.cursorBox);
+            this.panel1.Controls.Add(this.textBox1);
             this.panel1.Controls.Add(this.label4);
-            this.panel1.Controls.Add(this.fontBox);
             this.panel1.Controls.Add(this.btnFont);
             this.panel1.Controls.Add(this.label2);
             this.panel1.Controls.Add(this.label3);
@@ -165,9 +168,9 @@
             this.panel1.Controls.Add(this.BtnDrop);
             this.panel1.Controls.Add(this.BtnConnect);
             this.panel1.Controls.Add(this.label1);
-            this.panel1.Location = new System.Drawing.Point(12, 651);
+            this.panel1.Location = new System.Drawing.Point(12, 657);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(895, 58);
+            this.panel1.Size = new System.Drawing.Size(1097, 58);
             this.panel1.TabIndex = 10;
             // 
             // cursorBox
@@ -186,22 +189,15 @@
             this.label4.TabIndex = 14;
             this.label4.Text = "Cursor X x Y";
             // 
-            // fontBox
-            // 
-            this.fontBox.Location = new System.Drawing.Point(778, 34);
-            this.fontBox.Name = "fontBox";
-            this.fontBox.Size = new System.Drawing.Size(96, 20);
-            this.fontBox.TabIndex = 13;
-            // 
             // btnFont
             // 
             this.btnFont.Location = new System.Drawing.Point(778, 3);
             this.btnFont.Name = "btnFont";
-            this.btnFont.Size = new System.Drawing.Size(81, 23);
+            this.btnFont.Size = new System.Drawing.Size(97, 23);
             this.btnFont.TabIndex = 12;
-            this.btnFont.Text = "Font";
+            this.btnFont.Text = "Load Font List";
             this.btnFont.UseVisualStyleBackColor = true;
-            this.btnFont.Click += new System.EventHandler(this.btnFont_Click);
+            this.btnFont.Click += new System.EventHandler(this.BtnFont_Click);
             // 
             // label3
             // 
@@ -227,34 +223,52 @@
             this.h19Term.TabIndex = 12;
             this.h19Term.Text = "";
             this.h19Term.WordWrap = false;
-            this.h19Term.KeyDown += new System.Windows.Forms.KeyEventHandler(this.h19Term_KeyDown);
-            this.h19Term.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.h19Term_KeyPress);
-            this.h19Term.MouseCaptureChanged += new System.EventHandler(this.h19Term_MouseCaptureChanged);
-            this.h19Term.Resize += new System.EventHandler(this.h19Term_Resize);
+            this.h19Term.KeyDown += new System.Windows.Forms.KeyEventHandler(this.H19Term_KeyDown);
+            this.h19Term.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.H19Term_KeyPress);
+            this.h19Term.MouseCaptureChanged += new System.EventHandler(this.H19Term_MouseCaptureChanged);
+            this.h19Term.Resize += new System.EventHandler(this.H19Term_Resize);
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(941, 632);
+            this.textBox1.Location = new System.Drawing.Point(916, 9);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(151, 20);
             this.textBox1.TabIndex = 13;
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(914, 39);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(153, 13);
+            this.label5.TabIndex = 14;
+            this.label5.Text = "Copyright © Darrell Pelan 2023";
+            // 
+            // fontComboBox
+            // 
+            this.fontComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.fontComboBox.FormattingEnabled = true;
+            this.fontComboBox.Location = new System.Drawing.Point(780, 34);
+            this.fontComboBox.Name = "fontComboBox";
+            this.fontComboBox.Size = new System.Drawing.Size(121, 21);
+            this.fontComboBox.TabIndex = 16;
+            this.fontComboBox.SelectedIndexChanged += new System.EventHandler(this.FontComboBox_SelectedIndexChanged);
             // 
             // MtMdm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1121, 721);
-            this.Controls.Add(this.textBox1);
+            this.ClientSize = new System.Drawing.Size(1121, 727);
             this.Controls.Add(this.h19Term);
             this.Controls.Add(this.panel1);
             this.KeyPreview = true;
             this.Name = "MtMdm";
             this.Text = "MT Modem";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MtMdm_FormClosing);
+            this.Load += new System.EventHandler(this.MtMdm_Load);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -272,12 +286,13 @@
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Button btnFont;
-        private System.Windows.Forms.TextBox fontBox;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TextBox cursorBox;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private System.Windows.Forms.TextBox textBox1;
         protected internal System.Windows.Forms.RichTextBox h19Term;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.ComboBox fontComboBox;
     }
 }
 

@@ -17,33 +17,51 @@ using System.Runtime.InteropServices;
 using System.Drawing.Drawing2D;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Drawing.Imaging;
+using System.Security.Policy;
 
 
 namespace MT_MDM
 {
     public partial class MtMdm : Form
     {
-        private SerialPort serialPort = new SerialPort();
+        private static SerialPort serialPort = new SerialPort();
         Configuration config = ConfigurationManager.OpenExeConfiguration(Application.ExecutablePath);
 
         string textStr = "";
-        bool ymodem = false;
-        bool online = false;
+        public static bool ymodem = false;
+        public static bool online = false;
+        public static byte lastKey = 0;
+        public static bool serialBufFull = false;
         bool mouseCapture = false;
         private static int maxCol = 81, maxRow = 100;
         private Byte[] display = new Byte[maxRow*(maxCol)];
 
         private string fontPath = "";
+        private string appPath = "c:\\";
+        public static string downlLoadPath = "c:\\";
         //[DllImport("KERNEL32.DLL", SetLastError = true)]
         //[return: MarshalAs(UnmanagedType.Bool)]
         //static extern bool AllocConsole();
         // Display variables
         private static int numCol = 80, numRow = 25, charWidth = 8, charHeight = 10;
                 // 2 pixels per bit, 2 pixel spacer
-         int cursorX = 0;        // Current cursor X position 80x25 grid
+        int cursorX = 0;        // Current cursor X position 80x25 grid
         int cursorY = 75;        // Current cursor Y position
         bool ctlE = false;
         private float defaultRtbH, defaultRtbW;
+        //
+        // Serial in buffer for file transfer
+        private static byte[] _dataIn = new byte[1024];
+        private static int _dataInPtr = 0;
+        private static int _dataInEnd = 0;
+        private static bool _dataFull = false;
+        // Locking variables
+        //public static object syncObj = new object();
+        //private static Queue <byte> serialBuffer = new Queue< byte>(); 
+        // event variables
+
+
+
         //
 
         //
@@ -51,19 +69,31 @@ namespace MT_MDM
         public MtMdm()
         {
             InitializeComponent();
+
+           }
+        private void MtMdm_Load(object sender, EventArgs e)
+        {
             RefreshPortList();
             loadPreviousSessionSettings();
-            setDisconnected();
+            SetDisconnected();
             serialPort.DataReceived += new SerialDataReceivedEventHandler(serialDataReceived);
-            display_init();
+            Display_init();
             cursorBox.Text = cursorX.ToString() + "x" + (cursorY - 75).ToString();
             statusBox.Enabled= false;
-
+            fontComboBox.Text = h19Term.Font.Name;
+            LoadFont();
             //richTextBox1.Select(1, 1);
             h19Term.Focus();
             defaultRtbH = h19Term.Size.Height;
             defaultRtbW = h19Term.Size.Width;
-           }
+        }
+
+        public static void SetDownLoadPath(string path)
+        {
+            downlLoadPath = path;
+            //saveCurrentSessionSettings();
+        }
+
         private void BtnConnect_Click(object sender, EventArgs e)
         {
             {
@@ -79,19 +109,16 @@ namespace MT_MDM
             }
             catch (Exception)
             {
-                MessageBox.Show("Could not connect to the COM port selected!",
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                ExMessage("Could not connect to the COM port selected!");
             }
-            setConnected();
+            SetConnected();
             online = true;
         }       
      
 
-        private void btnFont_Click(object sender, EventArgs e)
+        private void BtnFont_Click(object sender, EventArgs e)
         {
-            loadFont("");
+            LoadFont();
         }
         private void MtMdm_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -116,22 +143,22 @@ namespace MT_MDM
         {
             using (var searcher = new ManagementObjectSearcher("SELECT * FROM WIN32_SerialPort"))
             {
-                string[] portnames = SerialPort.GetPortNames();
+                var portNames = SerialPort.GetPortNames();
                 var ports = searcher.Get().Cast<ManagementBaseObject>().ToList();
-                var tList = (from n in portnames
+                var tList = (from n in portNames
                              join p in ports on n equals p["DeviceID"].ToString()
                              select n + " - " + p["Caption"]).ToList();
-                foreach (string port in portnames)
+                foreach (var port in portNames)
                 {
-                    bool founded = false;
+                    bool found = false;
                     foreach (string iport in tList)
                     {
                         if (iport.Contains(port))
                         {
-                            founded = true;
+                            found = true;
                         }
                     }
-                    if (!founded)
+                    if (!found)
                     {
                         tList.Add(port);
                         break;
@@ -156,48 +183,116 @@ namespace MT_MDM
 
         private void serialDataReceived(object sender, SerialDataReceivedEventArgs e)
         {
+            int data = 0;
+
+            try
+            {
+                data = serialPort.ReadByte();
+            }
+            catch (Exception ex)
+            {
+                ExMessage("Serial Read Error!");
+            }
             if (!ymodem)
             {
-                int data= serialPort.ReadByte();
-                while(data != -1)
-                {
-                    Invoke(new Action(() => {
-                    displayChar((byte)data);
-                    }));
-
-                    try
-                    {
-                        data = serialPort.ReadByte();
-                    }
-                    catch(Exception ex)
-                    {
-
-                    }
-                }
+                Invoke(new Action(() => {
+                    DisplayChar((byte)data);
+                }));
             }
             else                // Ymodem file transfer code
             {
+                //if (!SerialInBuf((byte)data))    // false if serial data buffer is full
+                //    serialBufFull = true;               // serial buffer full flag
+
+                Ymodem.serialData.AddData((byte) data);
+            }
+            //if (!ymodem)
+            //{
+            //    data= serialPort.ReadByte();
+            //    while(data != -1)
+            //    {
+            //        Invoke(new Action(() => {
+            //        DisplayChar((byte)data);
+            //        }));
+            //        try
+            //        {
+            //            data = serialPort.ReadByte();
+            //        }
+            //        catch(Exception ex)
+            //        {
+            //            ExMessage("Serial Read Error!");
+            //        }
+            //    }
+            //}
+            //else                // Ymodem file transfer code
+            //{
+            //    if (!Ymodem.SerialInBuf((byte)data))
+            //        serialBufFull = true;               // serial buffer full flag
+            //}
+        }
+        private bool SerialInBuf(byte num)
+        {
+            int length = _dataIn.Length;
+            bool result = true;
+
+            if (!_dataFull)
+            {
+                _dataIn[_dataInEnd++] = num;
+                _dataInEnd %= length;
+            }
+            if (_dataInEnd == _dataInPtr)
+            {
+                _dataFull = true;
+                result = false;
 
             }
+
+            return result;
         }
-        private void ComPort_SelectedIndexChanged(object sender, EventArgs e)
+
+        // ************* SerialGetBuf - gets byte from Serial In buffer
+        // ok = valid result
+        public static bool SerialGetBuf(out byte val, int time)
         {
+            int length = _dataIn.Length;
+            DateTime timeEnd = DateTime.Now.AddSeconds(time);
+            bool ok = true;
+            val = 0;
 
+            while (ok )
+            {
+                //if (_dataInPtr != _dataInEnd)
+                //{
+                //    val = _dataIn[_dataInPtr++];
+                //    _dataInPtr %= length;
+                //    break;
+                //}
+                //else
+                //{           // Check elapsed time for timeout
+                //    if (DateTime.Now > timeEnd)
+                //        ok = false;
+                //}
+                if (DateTime.Now > timeEnd)
+                    ok = false;
+                //lock (syncObj)
+                //{
+                //    if (serialBuffer.Count > 0)
+                //    {
+                //        val = serialBuffer.Dequeue();
+                //        break;
+                //    }
+                //}
+            }
+            return ok;
         }
-
-        private void BaudRate_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
         private void BtnDrop_Click(object sender, EventArgs e)
         {
-            setDisconnected();
+            SetDisconnected();
             online = false;
         }
 
 
-        public void setConnected()
+        public void SetConnected()
         {
             //scanButton.Enabled = false;
             BtnConnect.Enabled = false;
@@ -209,7 +304,7 @@ namespace MT_MDM
         /// RESET UI SO THAT USER CAN CONNECT TO ANOTHER SERIAL PORT
         /// IF NECESSARY
         /// </summary>
-        public void setDisconnected()
+        public void SetDisconnected()
         {
             serialPort.Close();
             //scanButton.Enabled = false;
@@ -222,7 +317,9 @@ namespace MT_MDM
         //
         private void BtnYmodem_Click(object sender, EventArgs e)
         {
-    
+            var fileTransfer = new Ymodem();
+            fileTransfer.ShowDialog();
+            fileTransfer.Close();
 
         }
         //************ Terminal Display Functions ************************
@@ -232,37 +329,46 @@ namespace MT_MDM
             byte[] ch = new byte[1];
             ch[0] = (byte)e.KeyChar;
             Debug.WriteLine("MtMdm: char {0}, value {1}", (char)ch[0], BitConverter.ToString(ch));
-            displayChar(ch[0]);
+            DisplayChar(ch[0]);
             e.Handled = true;       // Tell Windows no further action is needed to keep RTB from updating screen
 
         }
 
-        private void h19Term_KeyPress(object sender, KeyPressEventArgs e)
+        private void H19Term_KeyPress(object sender, KeyPressEventArgs e)
         {
-            byte[] ch = new byte[1];
+            byte ch ;
             //if (e.Control && e.KeyCode == Keys.E)
             //    Close();
-            ch[0] = (byte)e.KeyChar;
-            if (ch[0] > 0x19 && ch[0] < 0x7f)  
-                Debug.WriteLine("h19Term: char {0}, value {1}", (char)ch[0],  BitConverter.ToString(ch));
+            ch = (byte)e.KeyChar;
+            if (ch > 0x19 && ch < 0x7f)  
+                Debug.WriteLine("h19Term: char {0}, value {1}", (char)ch,  ch);
             else
-                Debug.WriteLine("h19Term: value {0}", ch[0]);
-            displayChar(ch[0]);
+                Debug.WriteLine("h19Term: value {0}", ch);
+            DisplayChar(ch);
 
             e.Handled = true;
-            //if (online)                  // might need to check if Term key clicked
-            //    displayChar(ch[0]);
-            try
-            {
-                serialPort.Write(ch, 0, 1);
-            }
-            catch(Exception ex)
-            {
+            if (!ymodem)                  // don't interrupt file transfer
+                SendByte(ch);
+            ;
 
-            }
         }
 
-        private void h19Term_MouseCaptureChanged(object sender, EventArgs e)
+        public static void SendByte(byte val)
+        {
+            byte[] ch = new byte[1];
+            ch[0] = val;
+            if (online)
+                try
+                {
+                    serialPort.Write(ch, 0, 1);     // requires character array
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Serial Write Error", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+        }
+
+        private void H19Term_MouseCaptureChanged(object sender, EventArgs e)
         {
             if (mouseCapture)
             {
@@ -279,12 +385,12 @@ namespace MT_MDM
                 Clipboard.SetText(h19Term.SelectedText);
         }
 
-        private void h19Term_KeyDown(object sender, KeyEventArgs e)
+        private void H19Term_KeyDown(object sender, KeyEventArgs e)
         {
             e.Handled = true;
         }
 
-        private void h19Term_Resize(object sender, EventArgs e)
+        private void H19Term_Resize(object sender, EventArgs e)
         {
             float newH, newW;
             newH = h19Term.Size.Height;
@@ -294,15 +400,21 @@ namespace MT_MDM
         }
 
 
-        private void btnClrScreen_Click(object sender, EventArgs e)
+        private void BtnClrScreen_Click(object sender, EventArgs e)
         {
-            display_init();
+            Display_init();
         }
 
+
+        public void ExMessage(String s)
+        {
+            MessageBox.Show(s, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
 
 
         //
         //*************************** Configuration files
+        /// Learned from https://github.com/hushoca/c-serial-terminal
         //
         public void initSettings()
         {
@@ -326,6 +438,9 @@ namespace MT_MDM
             config.AppSettings.Settings.Add("form_width", "580");
             config.AppSettings.Settings.Add("form_height", "640");
             config.AppSettings.Settings.Add("fontPath","c:\\");
+            config.AppSettings.Settings.Add("appPath", Directory.GetCurrentDirectory()) ;
+            config.AppSettings.Settings.Add("appPath", downlLoadPath);
+
             #endregion
 
             //set form items to default.
@@ -338,6 +453,8 @@ namespace MT_MDM
             //save the config file changes
             config.Save();
         }
+
+
 
 
         /// <summary>
@@ -361,6 +478,8 @@ namespace MT_MDM
 
             bool cr = true;
             string font_path = null;
+            string app_path = "C:\\";
+            string dl_path = "C:\\";
             #endregion
 
             //try catch to make sure user didnt mess the xml file and added characters
@@ -375,8 +494,9 @@ namespace MT_MDM
                 form_y = int.Parse(config.AppSettings.Settings["form_y"].Value);
                 form_width = int.Parse(config.AppSettings.Settings["form_width"].Value);
                 form_height = int.Parse(config.AppSettings.Settings["form_height"].Value);
-                cr = Boolean.Parse(config.AppSettings.Settings["CR"].Value);
-                font_path = (config.AppSettings.Settings["fontPath"].Value);
+                font_path = (config.AppSettings.Settings["fontPath"].Value); 
+                app_path = (config.AppSettings.Settings["appPath"].Value);
+                dl_path = (config.AppSettings.Settings["dlPath"].Value);
             }
             catch (Exception)
             {
@@ -409,17 +529,17 @@ namespace MT_MDM
                 //xml file to the comboBoxes, form x,y,width etc..
                 #region Setup form according to xml file values
                 BaudRate.SelectedIndex = baud;
-                //BaudRate.SelectedIndex = baud;
                 //bitRateComboBox.SelectedIndex = bitRate;
                 //parityComboBox.SelectedIndex = parity;
                 //stopBitsComboBox.SelectedIndex = stopBits;
-                //checkBoxCR.Checked = cr;
                 this.Left = form_x;
                 this.Top = form_y;
                 this.Height = form_height;
                 this.Width = form_width;
                 this.fontPath= font_path;
-                loadFont(font_path);
+                this.appPath= app_path;
+                downlLoadPath = dl_path;
+                LoadFont();
                 #endregion
             }
         }
@@ -440,7 +560,7 @@ namespace MT_MDM
             String parity = "0"; // parityComboBox.SelectedIndex.ToString();
             String stopBits = "1"; // stopBitsComboBox.SelectedIndex.ToString();
 
-            String CR = "True "; // checkBoxCR.Checked.ToString();
+ 
             String form_height = this.Height.ToString();
             String form_width = this.Width.ToString();
             String form_x = this.Location.X.ToString();
@@ -452,7 +572,6 @@ namespace MT_MDM
             config.AppSettings.Settings.Add("bitRate", bitRate);
             config.AppSettings.Settings.Add("parity", parity);
             config.AppSettings.Settings.Add("stopBits", stopBits);
-            config.AppSettings.Settings.Add("CR", CR);
 
             config.AppSettings.Settings.Add("form_x", form_x);
             config.AppSettings.Settings.Add("form_y", form_y);
@@ -460,50 +579,42 @@ namespace MT_MDM
             config.AppSettings.Settings.Add("form_width", form_width);
             config.AppSettings.Settings.Add("form_height", form_height);
             config.AppSettings.Settings.Add("fontPath", fontPath);
-            //set form items to default.
+            config.AppSettings.Settings.Add("appPath", appPath);
+            config.AppSettings.Settings.Add("dlPath", downlLoadPath);
             BaudRate.SelectedItem = "19200";
            
             config.Save();
             #endregion
 
         }
+        // End Configuration Code
+        //
+  
 
-        // No longer needed while using TrueType Font
+       
+
         //       
         //******************* Load Font ******************
-        void loadFont(string path)
+        private void LoadFont()
         {
-            if (path.Length == 0)
+            int h19item = 0, cnt = 0;
+
+            foreach (FontFamily font in System.Drawing.FontFamily.Families)
             {
-                OpenFileDialog openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-                openFileDialog1.Filter = "Font Files (*.bin)|*.bin";
-                openFileDialog1.FilterIndex = 2;
-                openFileDialog1.RestoreDirectory = true;
-                openFileDialog1.CheckFileExists = false;
-                openFileDialog1.ShowDialog();
-                path = openFileDialog1.FileName;
-                if (path.Length == 0)
-                {
-                    statusBox.Text = ("No font files found");
-                    return;
-                }
-                else
-                {
-                    fontPath = path;
-                    saveCurrentSessionSettings();
-                }
+                fontComboBox.Items.Add(font.Name);
+                if (font.Name.Contains("Heathkit"))
+                    h19item = cnt;
+                cnt++;
             }
-            fontBox.Text = fontPath.Substring(fontPath.LastIndexOf("\\") + 1);   
-            h19.h19Font = File.ReadAllBytes(path);
-            h19.fontOK = true;
+            fontComboBox.SelectedIndex = h19item;
+
         }
-
-
-        //******************* Font Class h19 ************************************
-        public partial class h19
+        private void FontComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            public static byte[] h19Font = new byte[4096];
-            public static bool fontOK = false;
+            var s = fontComboBox.SelectedItem.ToString();
+            h19Term.Font = new Font(s, 12, FontStyle.Regular);
+            fontPath = s.ToString();
+            saveCurrentSessionSettings();
         }
 
     }
