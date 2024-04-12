@@ -1,0 +1,245 @@
+.mt6
+.rm6.8"
+.he
+OO 
+pD44Super H-150/160 1.2 Meg Memory Upgrade 
+.hm2
+.oc on
+.cw10
+
+
+
+hh "
+pD4
+
+>> 
+Micronics Technology
+
+
+?? 
+Suite 159, 54 Dalraida Rd.
+
+OO 
+Montgomery, AL 36109
+
+,, 
+(205)-244-1597
+
+
+ii 
+*****************************************************************
+
+
+
+11 
+Super PAL 1.2 Meg Memory Upgrade
+
+qq 
+for the
+
+,, 
+Heath/Zenith 150/160
+
+ 
+(H/Z-100 PC)
+
+
+
+uu 
+Version 1.1
+
+ 
+Darrell Pelan
+
+44 
+January 21, 1989
+
+
+
+
+mm 
+Contents
+
+ 
+1.  Introduction............................. 1
+2.  Installing Super PAL..................... 2
+3.  Troubleshooting.......................... 3         
+4.  Operation................................ 3
+5.  Warranty................................. 3
+
+
+Copyright (c) 1988, 1989 Darrell Pelan.  
+
+
+
+
+
+
+1.  Introduction
+
+
+ 
+Super  Pal  allows  you  to have up to 1.2 Meg of RAM on a single memory  board  in  the  H/Z-100  PC.  
+Most  users find that EMS memory is used as a RAM card.  Super Pal provides a RAM disk at a much  reduced 
+cost.   The memory is split into 640k of main memory and 640k of RAM disk.  A device  driver,  MTDISK.DVD, 
+is supplied to access the RAM disk.  
+
+
+ 
+Future versions of Super Pal will allow the use of multiple Zenith memory cards for larger RAM disks.  
+The future versions will be completely compatible with the current Super Pal. 
+ o43 
+
+ 
+Super  Pal  is  a programmable array logic (PAL) chip that replaces the Heath  memory  decoder  PAL, 
+U455.  Additional memory address signals are decoded from U458 (Port 100h) to provide the ability to address 
+all 1.2 meg of memory.  All banks must have 256k RAM chips installed to use Super Pal.
+
+
+2.  Installing Super Pal
+
+HARDWARE
+
+
+ 
+Super  Pal  installation  involves  removing  both  the memory and  CPU  cards.   You  will  replace  the 
+memory  decoder  on  the memory card with Super Pal and set the CPU card memory  switches  to  match  the 
+amount of memory in your system.
+
+
+ 
+a.  If you have a hard disk, run the SHIP program.  An once of prevention is worth a pound of cure  (or 
+a new winchester) in case you bump your computer while working on it.
+
+
+ 
+b.  Disconnect the power cord.
+
+
+ 
+c.  Remove  the  cover.  H-160 owners will have to remove the disk drives and  the  retaining  bar  from 
+across the top of the circuit cards. 
+
+
+ 
+d.  Remove  the  memory  card.   Minimize your handling of this  card!   Be  especially  careful  of  static 
+electricity.   There  are  many  sensitive  components on this card.  BE CAREFUL  not  to  drop  the  mounting 
+bracket  retaining  screw  inside  your  machine.   If you do have an accident  with  the  screw,  FIND  it  before 
+applying power or continuing with this installation.
+
+
+ 
+e.  Find the decoder chip, U455 part number 444-224, (located in the middle of the card) and  carefully 
+remove it.  Place in the other side of the packing foam Super Pal was shipped on.  It will not be used again.
+
+
+ 
+f.  Find U458, a 74LS174, and remove it.  Set it aside.  It will be installed on the Super Pal PC board.
+
+
+ 
+g.   Remove Super Pal PC board from the packing foam and carefully align the mounting pins with  the 
+sockets for U455 and U458.  This procedure is best done with the memory card laying on a table.  U455 is a 20 
+pin socket and U458 is a 16 pin socket.  The PC board can only be correctly installed one way.  Make sure  that 
+the  20  pin  header is correctly aligned with the 20 pin socket.  Also check the alignment of the  16  pin  header 
+and  socket.  CAREFULLY press the Super Pal PC Board into the memory card sockets.  Install  the  74LS174 
+removed in step f in the 16 pin socket.
+
+
+ 
+h.  Make sure that J401 is in the "1st" position.  
+
+
+ 
+i.  Install the 256k RAM (150 ns RAM recommended) chips in all five memory banks.  
+
+
+ 
+j.  Reinstall the memory card and attach the mounting bracket with the screw removed in step d.
+
+
+ 
+k.   Disconnect  the  keyboard  cord  and  speaker wire from the  CPU  card.   Remove  the  CPU  card.  
+Minimize  your  handling  of  this  card.  Be especially careful of  static  electricity.   There  are  many  sensitive 
+components  on this card.  BE CAREFUL not to drop the retaining screw inside your machine.  If you do  have 
+an accident with the screw, FIND it before applying power or continuing with this installation.
+
+
+ 
+l.  Set Switch 2-0 through 2-4 for 640k of RAM.  The proper setting is shown in Table 1.
+
+ o4?0 
+
+ 
+m.   Replace  the  CPU  card  being careful to follow the warnings  in  step  l.   Reattach  the  mounting 
+bracket to the computer case.  
+
+
+ 
+n.  Plug the keyboard and speaker cables into the CPU card.     
+
+
+ 
+o.   Turn the power on and observe the CPU LED's.  At least one floppy disk drive must be  connected 
+to the floppy disk controller. All LED's should turn off, one at a time, from the front of the computer.  The last 
+LED will remain lit.  
+
+
+ 
+p.   Disconnect the power cord and install the cover.  H-160 owners will need to install the  circuit  card 
+retaining bar and the disk drives.  Reconnect the power cord and ENJOY the expanded memory of Super Pal.
+
+
+MM 
+Table 1       
+
+;; 
+CPU Card Switch 2 Settings
+
+
+ 
+The  switch settings for 256k to 640k should match the values in Table 2.2, page 2.12, of the Z-100  PC 
+Series Operations Manual
+HDpD
+   Memory Size      2-0       2-1       2-2       2-3       2-4
+
+      640k          right     left      right     right     left 
+pDHD
+.cw10
+
+
+SOFTWARE
+
+
+ 
+The  RAM disk is accessed through the device driver, MTDISK.DVD.  Copy MTDISK.DVD  onto  your 
+boot  disk.   Hard  disk owners may wish to copy MTDISK.DVD to their BIN subdirectory.   Add  the  following 
+line to your CONFIG.SYS file:
+
+                             device = mtdisk.dvd
+
+3.  Troubleshooting  
+
+
+ 
+If  you  have  any  problems, carefully recheck each step of the installation  process.   If  you  still  have 
+problems, please call or write us for additional help.  Our hours are 6-8 PM CST M-F and 9-12 Sat.
+
+4.  Operation.  
+
+
+ 
+Super Pal provides memory decoding for 640k of main memory.  No additional changes are required to 
+use  the  main memory.  MTDISK will create the RAM disk as disk C: on a floppy system or disk G: on  a  hard 
+disk  system.  After the boot process, the RAM disk can be used like any other disk on your system.  If you  are 
+using  the  RAM disk for data, MAKE sure to copy any new data to a floppy or hard disk before  shutting  your 
+system off.  Any data in the RAM disk will be lost when the power is turned off or the system is rebooted.  The 
+RAM disk uses no main memory itself.  The MTDISK device driver requires approximately 1k of RAM.
+
+
+5.  Warranty.  
+
+
+ 
+Super  Pal  is  guaranteed  to  work for 90 days after  shipping.   In  all  cases,  Micronics  Technology's 
+liability is limited to the cost

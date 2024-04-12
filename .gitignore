@@ -4,3 +4,7 @@ bin/debug/*
 bin/release/*.lnk
 packages/*
 thoughts/
+Test Data/
+H89/archive
+
+

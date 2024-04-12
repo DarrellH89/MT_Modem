@@ -32,7 +32,15 @@ namespace MT_MDM
             h19Term.SelectionStart = h19Term.Text.Length;
             h19Term.ScrollToCaret();
         }
- 
+
+        private void OnSerialData(object sender,SerialBufferEventArgs e)
+        {
+            // need check for ymodem
+            if (e.Type == SerialBufferEventType.Data && !ymodem)
+                Invoke(new Action(() => {
+                    DisplayChar(e.Value);
+                }));
+        }
         private void DisplayChar(byte ch)
         {
             // display = 100 x 80, Start writing on line 75. First 75 lines for future scroll capability

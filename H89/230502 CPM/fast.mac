@@ -1,0 +1,213 @@
+; Fast.com
+; Last modified 14 Sep 85
+;               19 Nov 86
+; program to modify BIOS to run at 4 MHz
+; for read add 24h to wboot
+; for write add 27h to wboot;
+; WBOOT address located at mem loc. 1 and 2
+.z80
+
+CTLPRT  equ     0dh     ; H89 Control Port data
+H88CTL  equ     0f2h    ; H89 general control port location
+BDOS    equ     5
+CCPSZ   equ     800h
+DISK    equ     4       ; Current disk drive location
+
+start:
+         di
+         ld      c,9     ; print sigon message
+         ld      de, signon
+         call    BDOS
+              ; check if FAST is already loaded
+         ld      a,(2)   ; get BIOS start page
+         ld      de,(6)  ; get BDOS start page
+         sub     d
+         cp      0eh     ; check if BIOS and BDOS pages are 0E hex pages apart
+         jp      nz,oops ; it wasn't so FAST is already loaded.
+;
+              ; move the CP/M serial number
+         ld      hl,(6)          ; get the BDOS address
+         ld      (Tdos + 1), hl  ; modify the new jump vector
+         ld      l,0             ; make it an even page number
+         ld      de, first       ; move the six bytes to the resident location
+         ld      bc, 6
+         ldir
+             ; Calculate the load address and offset
+         ld      hl, (Tdos+1)    ; Has the old BDOS location in it now
+         ld      l,0             ; starts on an even page, saves subtracting 6
+         ld      de,-CCPSZ - (Last - First )       ; offset
+         add     hl,de           ; load address
+         ld      (ldaddr),hl     ; save the load address
+         ld      bc, first
+         xor     a               ; clear the flags
+         sbc     hl,bc           ; calculate the offset
+         push    hl              ; save it in bc
+         pop     bc
+                    ; adjust call values in relocated code
+         ld      hl, slow
+         add     hl,bc           ; add the offset
+         ld      (Home+1),hl
+         ld      (SelDsk+1),hl   ; Store in the modified BIOS vectors
+         ld      (SelTrk+1),hl
+         ld      (SelSec+1),hl
+         ld      (SetDMA+1),hl
+         ld      (Read+1),hl
+         ld      (Write+1),hl
+                                 ;
+;        ld      hl, fast
+;        add     hl,bc           ; add the offset
+;        ld      (Home+7),hl
+;        ld      (SelDsk+7),hl   ; Store in the modified BIOS vectors
+;        ld      (SelTrk+7),hl
+;        ld      (SelSec+7),hl
+;        ld      (SetDMA+7),hl
+;        ld      (Read+7),hl
+;        ld      (Write+7),hl
+                                 ;
+         ld      hl,STMHZ
+         add     hl,bc           ; calculate new offset for STMHZ
+         ld      (mod1+1),hl
+         ld      (mod2+1),hl
+
+         ; adjust the jump values in BIOS, BDOS
+         ld      hl,(6)
+         ld      de,-(ccpsz+3)   ; calculate the CCP jump vector
+                                 ; +3 is to avoid executing last command
+         add     hl,de
+         ld      (jccp+1),hl
+
+         ld      hl, tdos
+         add     hl,bc           ; add the offset
+         ld      (6), hl         ; set the new jump vector
+
+         ; Load BIOS vectors into FAST code
+         ld      hl,(1)          ; warm boot address
+         ld      de,15h+1        ; offset to Home jump vector
+         add     hl,de
+         ld      de,Home+4
+         push    hl              ; Save Home Jump vector address
+         push    bc              ; Save load offset
+         ld      a,7             ; number of vectors to change
+LP1:     ld      bc,2
+         ldir
+         inc     de              ; add 6 to DE
+         inc     de
+         inc     de
+         inc     de
+         inc     de
+         inc     de
+         inc     hl
+         dec     a               ; check if done
+         jr      nz,LP1
+         ;
+         pop     bc              ; Restore load offset
+         ld      hl,Home         ; change BIOS vectorE
+         ld      a,7             ; move 7 vectors
+LP2:     pop     hl              ; Start of BIOS vectors to change
+         call    LDBIOS          ; DE -> (HL)
+         push    hl              ; save for next time
+         ld      hl,8
+         add     hl,de           ; increment DE by 8
+         ex      de,hl
+         dec     a               ; loop until done
+         jr      nz,LP2
+         pop     hl              ; reset stack
+         ;
+         ld      hl, wboot
+         add     hl,bc           ; add the offset
+         ld      (1),hl          ; Load my Warm boot BIOS vector
+         ;
+              ; relocate the code
+         ld      de,(ldaddr)     ; move the load address to de
+         ld      hl, first
+         ld      bc, Last - First ; number of bytes to move
+         ldir
+;       4 MHz initilization
+;
+         ld      A,32H       ; 4 Mhz control word - see 4 Mhz code for definition
+         ld      (CTLPRT),a  ; 2 ms clock interrupt will update
+         out     (H88CTL),a
+         ei
+         jp      0
+         ;
+LDBIOS:  ld      (hl),e          ; DE -> (HL)
+         inc     hl
+         ld      (hl),d
+         inc     hl
+         inc     hl              ; Advance to next vector
+         ret
+;
+oops:    ld      c,9
+         ld      de, mess1       ; send error message
+         call    BDOS
+         jp      0
+;
+;************************* Relocated Code **********************
+;
+First:  ds      6       ; CP/M serial number
+Tdos:   jp     Tdos     ; modified during execution to point to real BDOS
+;****************************************
+; WarmBOOT
+wboot:  ld      a,(disk) ; get the default disk
+        ld      c,a
+jccp:   jp      0        ; modified by FAST
+;
+HOME:   call    slow     ; save processor state
+        call    0        ; Execute function - address modified by loader
+        jr      fast     ; Reset speed and return to BDOS
+;
+SELDSK: call    slow     ; save processor state
+        call    0        ; Execute function - address modified by loader
+        jr      fast     ; Reset speed and return to BDOS
+;
+SELTRK: call    slow     ; save processor state
+        call    0        ; Execute function - address modified by loader
+        jr      fast     ; Reset speed and return to BDOS
+;
+SELSEC: call    slow     ; save processor state
+        call    0        ; Execute function - address modified by loader
+        jr      fast     ; Reset speed and return to BDOS
+;
+SETDMA: call    slow     ; save processor state
+        call    0        ; Execute function - address modified by loader
+        jr      fast     ; Reset speed and return to BDOS
+;
+READ:   call    slow     ; save processor state
+        call    0        ; Execute function - address modified by loader
+        jr      fast     ; Reset speed and return to BDOS
+;
+WRITE:  call    slow     ; save processor state
+        call    0        ; Execute function - address modified by loader
+        jr      fast     ; Reset speed and return to BDOS
+;
+SLOW:   PUSH    AF           ; SAVE REG A
+        LD      a,(CTLPRT)   ; LOAD REG A WITH current control port value
+mod1:   ld      (STMHZ),a    ; Save in temporary storage
+        and     0EFh         ; Zero out the 2/4 MHz bit - #4
+        ld      (CTLPRT),a   ; Store this value in the control port storage
+                             ;  location for the 2ms clock interrupt routine
+        OUT     (H88CTL),a   ; OUTPUT IT TO THE H88 CONTROL PORT, F2
+        POP     AF           ; RESTORE A
+        ret
+;
+FAST:   push    af           ; Save Register A
+mod2:   LD      a,(STMHZ)    ; RESTORE previous operation speed
+        ld     (CTLPRT),a    ; As above - store the new H89 control word into
+                             ;  the storage location so the 2ms clock interrupt
+                             ; routine will not change the current operation speed
+        OUT     (H88CTL),a
+        POP     AF           ; Restore A
+        RET                  ; Return to CCP
+STMHZ:  DB      0            ; Temporary storage for control word
+                             ; 32H = Boot configuration
+                             ;   Bit 5 high - Bank Select H
+                             ;   Bit 4 high -  2/4 MHz selected for 4 Mhz
+                             ;   Bit 1 high - 2 ms clock enable
+Last:
+Ldaddr: ds      2            ; load address storage
+        ds      40           ; local stack
+Stack:  ds      2
+Signon: db      'Micronics Technology 2/4 MHz BIOS Modifier', 0ah,0dh,'$'
+Mess1:  db      0ah,0dh,'FAST Already loaded!!!',0ah,0dh,'$'
+db1:    db      'Ready to jump to warm boot',0dh,0ah,'$'
+         end

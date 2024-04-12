@@ -1,0 +1,129 @@
+
+Micronics Technology
+
+Suite 159, 54 Dalraida Rd.
+Montgomery, AL 36109
+
+(205)-244-1597
+
+*****************************************************************
+
+ MT Modem 
+
+Micronics Technology Modem Program
+
+Version 0.8
+Darrell Pelan
+Jul 31, 1989
+
+
+ Contents 
+.lm2"
+.oc off
+
+1.  Introduction.................................. 1 
+2.  Running MTMDM ....................... 1
+3.  Future Upgrades ......................... 2
+.oc off
+
+
+
+
+
+MTMDM †version †0.8xx †is released to the public domain for personal †
+use †only.  †
+Micronics †Technology sells †MTMDM for $14.95 plus $2 shipping.  
+Purchasers of 0.8xx will receive one free upgrade †to †version ç
+1.0.  Versions 1.0 and higher WILL NOT be public domain.
+
+
+
+
+
+
+
+Copyright †(c) †1989 †Darrell Pelan.  Sale of this software conveys 
+a license for its use †on †one †computer, owned †or †operated by 
+the purchaser, at any one time.  Copying this software or †documentation †
+by †any means whatsoever for any other purpose is prohibited.  
+ MT Modem  is a trademark of Darrell Pelan.
+.paä 1.  Introduction 
+.pn 1
+.rm65
+ MT †Modem  is a user-friendly, menu driven modem program.  
+It operates under both CP/M †and †HDOS.  ç
+ MT Modem  many features are discussed in the next section.
+
+
+  2.  Running MT Modem  
+
+ MT †Modem  †is †run by typing  MTMDM  at the command line.  
+The main †menu †will †display †and you're †ready †to modem!  
+Choose the Option menu to set the baud rate.  Pick the number †that †
+matches your modems or desired baud rate.
+
+
+
+- Terminal mode with text capture file (activated by the  f1  key).
+
+- Echo Terminal mode with text capture.
+
+- Conference mode - used on Compuserve or as a Chat mode.
+- Receive Files  - Uses XMODEM with Checksum or CRC error checking.  
+  The mode is automatically determined based on the sender's capabilities.
+- Send Files  - Uses XMODEM with Checksum or CRC error checking.  The mode is 
+  automatically determined based on the receiver's capabilities.
+- Hang Up - Hangs up the modem by using the DTR line in the RS-232 serial port.
+- Even returns you to the operating system when done!
+
+
+ MT Modem  will send files at 9600 baud in checksum or CRC mode.  
+The data throughput will †be higher †with †4 †MHz computers.  In 
+checksum mode,  MT Modem will receive at 9600 †baud.  †CRC †error ç
+checking †reduces †the †maximum rate to 4800 baud.  H-89's operating 
+at 2 MHz are †limited †to †half †the receive rates.
+
+Your †modem †can †be controlled through the MTMDM Terminal mode.  
+Most †new †modems †are Hayes †compatible.  †This †means that they 
+use the "AT" command set to †control †the †modem †operation.  ç
+Please †refer †to †your †modem †manual †for complete †details.  †
+Each †modem †supports †the †common †AT commands †in †addition †
+to †special commands to control any †non-standard †modem †features.  †
+The †mosÙ common †commands †and responses are listed below.  
+Each command is followed by †a †RETURN, †except ç
++++.
+
+Command
+Response
+- Means that modem is alive at well
+ATDT1205 244 0192
+
+
+DIALING
+- Command to dial
+using Touch Tone.
+DP1205 244 0192ä- Escape to command mode
+ATH0
+- Tell the modem to hang up                                       
+
+The †modem †will †detect †the baud rate you set using MTMDM and 
+respond †at †the †same †rate, usually †300, 1200, or 2400 baud.  
+After checking that the modem is working with the AT †command, †you ç
+will †want †to †dial a number for the Micronics Technology BBS (or 
+maybe a local BBS!).  †Use †ATDT †for touch †tone †systems and ATDP 
+for rotary phone lines.  Once your modem connects †to †another †modem, ç
+the †AT †commands †will †no longer work.  This enables you to send †
+and †receive †data †without †worrying about †sending †a modem command.  
+When you are ready to disconnect from a system that †doesn't †drop ç
+the †carrier, like Compuserve, type "+++".  This will put the modem 
+back into the command mode †and you †can hang up with "ATH0".  
+
+The +++ command will not work if the remote system is †sending †data ç
+
+ MT †Modem  †version .8xx users are entitled to one free upgrade.  
+The next †version †will †contain Ymodem †protocols, †a †dialing directory, 
+and script capability.  Future upgrades will be †$5 †each.  †Please ç
+send †me †any †upgrade †suggestions.  Since the code is still being 
+written, they †have †a †good †chance †for inclusion.
+
+

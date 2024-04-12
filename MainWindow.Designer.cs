@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.ComPort = new System.Windows.Forms.ComboBox();
             this.BaudRate = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -38,15 +39,18 @@
             this.BtnYmodem = new System.Windows.Forms.Button();
             this.btnClrScreen = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.btnEcho = new System.Windows.Forms.Button();
+            this.fontComboBox = new System.Windows.Forms.ComboBox();
+            this.label5 = new System.Windows.Forms.Label();
             this.cursorBox = new System.Windows.Forms.TextBox();
+            this.textBox1 = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
             this.btnFont = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.h19Term = new System.Windows.Forms.RichTextBox();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.label5 = new System.Windows.Forms.Label();
-            this.fontComboBox = new System.Windows.Forms.ComboBox();
+            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.mainMenu1 = new System.Windows.Forms.MainMenu(this.components);
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -104,7 +108,7 @@
             // 
             // BtnConnect
             // 
-            this.BtnConnect.Location = new System.Drawing.Point(361, 0);
+            this.BtnConnect.Location = new System.Drawing.Point(329, 0);
             this.BtnConnect.Name = "BtnConnect";
             this.BtnConnect.Size = new System.Drawing.Size(81, 23);
             this.BtnConnect.TabIndex = 5;
@@ -114,7 +118,7 @@
             // 
             // BtnDrop
             // 
-            this.BtnDrop.Location = new System.Drawing.Point(361, 32);
+            this.BtnDrop.Location = new System.Drawing.Point(329, 33);
             this.BtnDrop.Name = "BtnDrop";
             this.BtnDrop.Size = new System.Drawing.Size(81, 23);
             this.BtnDrop.TabIndex = 6;
@@ -152,6 +156,7 @@
             // panel1
             // 
             this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.panel1.Controls.Add(this.btnEcho);
             this.panel1.Controls.Add(this.fontComboBox);
             this.panel1.Controls.Add(this.label5);
             this.panel1.Controls.Add(this.cursorBox);
@@ -173,12 +178,48 @@
             this.panel1.Size = new System.Drawing.Size(1097, 58);
             this.panel1.TabIndex = 10;
             // 
+            // btnEcho
+            // 
+            this.btnEcho.Location = new System.Drawing.Point(424, 0);
+            this.btnEcho.Name = "btnEcho";
+            this.btnEcho.Size = new System.Drawing.Size(75, 23);
+            this.btnEcho.TabIndex = 18;
+            this.btnEcho.Text = "Echo On";
+            this.btnEcho.UseVisualStyleBackColor = true;
+            this.btnEcho.Click += new System.EventHandler(this.BtnEcho_Click);
+            // 
+            // fontComboBox
+            // 
+            this.fontComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.fontComboBox.FormattingEnabled = true;
+            this.fontComboBox.Location = new System.Drawing.Point(780, 34);
+            this.fontComboBox.Name = "fontComboBox";
+            this.fontComboBox.Size = new System.Drawing.Size(121, 21);
+            this.fontComboBox.TabIndex = 16;
+            this.fontComboBox.SelectedIndexChanged += new System.EventHandler(this.FontComboBox_SelectedIndexChanged);
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(914, 39);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(153, 13);
+            this.label5.TabIndex = 14;
+            this.label5.Text = "Copyright © Darrell Pelan 2023";
+            // 
             // cursorBox
             // 
             this.cursorBox.Location = new System.Drawing.Point(218, 35);
             this.cursorBox.Name = "cursorBox";
             this.cursorBox.Size = new System.Drawing.Size(92, 20);
             this.cursorBox.TabIndex = 15;
+            // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(916, 9);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(151, 20);
+            this.textBox1.TabIndex = 13;
             // 
             // label4
             // 
@@ -228,40 +269,24 @@
             this.h19Term.MouseCaptureChanged += new System.EventHandler(this.H19Term_MouseCaptureChanged);
             this.h19Term.Resize += new System.EventHandler(this.H19Term_Resize);
             // 
-            // textBox1
+            // toolStrip1
             // 
-            this.textBox1.Location = new System.Drawing.Point(916, 9);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(151, 20);
-            this.textBox1.TabIndex = 13;
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(914, 39);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(153, 13);
-            this.label5.TabIndex = 14;
-            this.label5.Text = "Copyright © Darrell Pelan 2023";
-            // 
-            // fontComboBox
-            // 
-            this.fontComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.fontComboBox.FormattingEnabled = true;
-            this.fontComboBox.Location = new System.Drawing.Point(780, 34);
-            this.fontComboBox.Name = "fontComboBox";
-            this.fontComboBox.Size = new System.Drawing.Size(121, 21);
-            this.fontComboBox.TabIndex = 16;
-            this.fontComboBox.SelectedIndexChanged += new System.EventHandler(this.FontComboBox_SelectedIndexChanged);
+            this.toolStrip1.Location = new System.Drawing.Point(0, 630);
+            this.toolStrip1.Name = "toolStrip1";
+            this.toolStrip1.Size = new System.Drawing.Size(1121, 25);
+            this.toolStrip1.TabIndex = 13;
+            this.toolStrip1.Text = "toolStrip1";
             // 
             // MtMdm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1121, 727);
+            this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.h19Term);
             this.Controls.Add(this.panel1);
             this.KeyPreview = true;
+            this.Menu = this.mainMenu1;
             this.Name = "MtMdm";
             this.Text = "MT Modem";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MtMdm_FormClosing);
@@ -269,6 +294,7 @@
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -293,6 +319,9 @@
         protected internal System.Windows.Forms.RichTextBox h19Term;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.ComboBox fontComboBox;
+        private System.Windows.Forms.Button btnEcho;
+        private System.Windows.Forms.ToolStrip toolStrip1;
+        private System.Windows.Forms.MainMenu mainMenu1;
     }
 }
 

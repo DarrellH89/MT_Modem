@@ -15,18 +15,25 @@ using System.Management;
 using System.Xml.Schema;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 using static System.Collections.Specialized.BitVector32;
+using System.IO.Ports;
 
 
 namespace MT_MDM
 {
   public partial class Ymodem : Form
   {
-      private int _errormax = 10;
-      private int _transSize = 128;
-      public static SerialBuffer serialData = new SerialBuffer();
-      public static bool serialDataRdy = false;
 
-      public Ymodem()
+        private int _errormax = 5;
+        private int _transSize = 128;
+        //public static SerialBuffer serialData = new SerialBuffer();
+        //public static bool serialDataRdy = false;
+        //private static Queue<byte> _serialBuffer = new Queue<byte>();
+        //private static object syncObj = new object();
+        //private SerialPort serialPort = new SerialPort();
+        private static Queue<byte> _serialBuffer = new Queue<byte>();
+        private static object syncObj = new object();
+
+        public Ymodem()
         {
             InitializeComponent();
         }
@@ -36,17 +43,55 @@ namespace MT_MDM
             folderBrowserDialog1.ShowNewFolderButton = false;
             MtMdm.ymodem = true;
             tbWorkingDir.Text = MtMdm.downlLoadPath;
-
+            MtMdm.serialPort.SerialData += YmOnSerialData;
+            //ConnectPort();
             //ticcnt = new Timer();
             //ticcnt.Interval = 100;           // 100 ms timer
             //ticcnt.Elapsed += new ElapsedEventHandler(TicksUpdate);
             //ticcnt.SynchronizingObject = this;
             //ticcnt.Start();
             //serialData = new SerialBuffer();        // publisher
-            var serialIn = new SerialIn();              // subscriber
-            serialData.SerialBufRdy += SerialIn.OnSerialBufRdy;
+            // var serialIn = new Ymodem();              // subscriber
+            //serialData.SerialBufRdy += OnSerialBufRdy;
         }
 
+
+  
+        //private void ConnectPort()
+        //{
+        //    //serialPort.BaudRate = MtMdm.gBaudRate;
+        //    //serialPort.PortName = MtMdm.gPortName;
+        //    serialPort.Parity = (Parity)0;          // "None";
+        //    serialPort.StopBits = (StopBits)1;
+        //    serialPort.DataBits = 8;
+        //    try
+        //    {
+        //        serialPort.Open();
+        //    }
+        //    catch (Exception)
+        //    {
+        //        MessageBox.Show("Could not connect to the COM port selected!", "Com Port Error");
+        //    }
+        //}
+        //private void serialDataReceived(object sender, SerialDataReceivedEventArgs e)
+        //{
+        //    if (MtMdm.online)
+        //    {
+        //        var data = serialPort.ReadByte();         // -1 if error
+        //        if(data != -1)
+        //            lock (syncObj)
+        //            {
+        //                _serialBuffer.Enqueue((byte)data);
+        //            }
+        //        Debug.WriteLine("Got {0:X}", data);
+
+        //    }
+        //}
+        //public void OnSerialBufRdy(object source, EventArgs e)
+        //{
+        //    //Ymodem.serialDataRdy = true;
+        //    //Debug.WriteLine("SerialIn Event, Buffer {0} val {1:X}", serialData.BufferSize(), serialData.temp);
+        //}
         private void BtnWorkingDir_Click(object sender, EventArgs e)
         {
             if(folderBrowserDialog1.ShowDialog() == DialogResult.OK)
@@ -71,17 +116,46 @@ namespace MT_MDM
 
         private void btnYmodem_Click(object sender, EventArgs e)
         {
-            byte temp = 0;
+            byte temp = 0, cnt =0;
             bool result = false;
-            while(temp != 3)
+            while(cnt != 5)
             {
-                result = SerialGetBuf(out temp, 10);
+                result = SerialGetBuf(out temp, 5);
                 rtbStatus.Text += String.Format("{0}", (char)temp);
-                Debug.WriteLine("{0} {1}",result,(char)temp );
+                Debug.WriteLine("Ymodem {0} {1:X}",result,(char)temp );
+                cnt++;
 
             }
         }
+        private void tbWorkingDir_TextChanged(object sender, EventArgs e)
+        {
+            MtMdm.SetDownLoadPath(tbWorkingDir.Text);
+        }
 
+        private void Ymodem_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            MtMdm.ymodem = false;
+            //serialPort.Close();
+        }
+        //
+        // Serial Functions
+
+        // Ymodem Serial Data Event Handler
+        private void YmOnSerialData(object sender, SerialBufferEventArgs e)
+        {
+
+            if (e.Type == SerialBufferEventType.Data && MtMdm.ymodem)
+            {
+                lock (syncObj)
+                {
+                    _serialBuffer.Enqueue(e.Value);
+                }
+
+                //Debug.WriteLine("Ymodem Got {0} Buf Cnt {1}", e.Value, _serialBuffer.Count);
+            }
+        }
+
+        // Get Data from the Serial Buffer
         private bool SerialGetBuf(out byte val, int time)
         {
             bool ok = false;
@@ -90,18 +164,35 @@ namespace MT_MDM
 
             while (DateTime.Now < timeEnd && !ok)
             {
-                if (serialDataRdy)
-                {
-                    var test = SerialBuffer.GetData();
-                    val = (byte)test;
-                    if (test < 0x100)
-                        ok = true;
-                }
-            }
+                    lock (syncObj)
+                    {       
+                        if (_serialBuffer.Count > 0)
+                        {
+                            val = _serialBuffer.Dequeue();
 
+                            //var test = SerialBuffer.GetData();
+                            //val = (byte)test;
+                            //if (test < 0x100)
+                            ok = true;
+                        }
+                    }
+            }
             return ok;
         }
-
+        private void SendByte(byte val)
+        {
+            //byte[] ch = new byte[1];
+            //ch[0] = val;
+            try
+            {
+                MtMdm.serialPort.Send(val);     
+                Debug.WriteLine("Sent {0:X}", val);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Serial Write Error", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
         //********************** ReadFile
         // Gets file names to receive. Should only be one name. Used
@@ -146,11 +237,12 @@ namespace MT_MDM
             bool ok = false;
             byte start = (byte) 'C';
             _transSize = 128;           // default packet size
+            var path = tbWorkingDir.Text + "\\" + fName;
  
 
             try
             {
-            fso = new FileStream(fName, FileMode.OpenOrCreate, FileAccess.Write);
+            fso = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write);
             fileOutByte = new BinaryWriter(fso);  
             }
             catch (Exception e)
@@ -159,10 +251,10 @@ namespace MT_MDM
                 return false;
             }
 
-            rtbStatus.Text += "\nTrying to receive file\n";
+            rtbStatus.Text += String.Format( "\nTrying to receive file\n");
               do  
               {
-                  MtMdm.SendByte(start );               /* request CRC mode */
+                  SendByte(start );               /* request CRC mode */
                   if(!SerialGetBuf(out first, timeout) ) /* look for SOH */
                       errors += 1 ;
               } 
@@ -172,9 +264,9 @@ namespace MT_MDM
               if (errors > 3)
               {
                   timeout = 10 ;
-                  rtbStatus.Text += "Changing to Checksum mode\n";
+                  rtbStatus.Text += String.Format("Changing to Checksum mode\n");
                   mode = 0 ;
-                  MtMdm.SendByte(start);
+                  SendByte(start);
                   do
                   {
                       if (!SerialGetBuf(out first, timeout)) /* look for SOH */
@@ -287,15 +379,15 @@ namespace MT_MDM
                     errors +=A.errormax;
                     ok = false;
                     start = A.EOT;    /* cancel on the other end */
-                    MtMdm.SendByte(start);
+                    SendByte(start);
                 }
                 if (ok)    /* got a good sector and finished all processing so - */
-                    MtMdm.SendByte(A.ACK);           /* send request for next sector */
+                    SendByte(A.ACK);           /* send request for next sector */
                 else
                 {                       /* some error occurred! */
                     errors++;
                     while (SerialGetBuf(out var temp, 2)) ;
-                    MtMdm.SendByte(start);
+                    SendByte(start);
                     start = A.NAK;
                 }
                 SerialGetBuf(out first, 1);
@@ -305,22 +397,21 @@ namespace MT_MDM
               // File transfer complete - Cleanup
             if ((first == A.EOT) && (errors < errmax))
             {
-                MtMdm.SendByte(A.ACK);
+                SendByte(A.ACK);
                 rtbStatus.Text +="\nTransfer complete";
             }
             else
                 rtbStatus.Text += "\nAborting\n";
-            if (bufPtr >= buf.Length)       // Writing any data in buffer
+            if (bufPtr > 0)       // Writing any data in buffer
             {                    
-                fileOutByte.Write(buf, 0, buf.Length);
+                fileOutByte.Write(buf, 0, bufPtr);
+                fileOutByte.Close();
+                fso.Close();
                 bufPtr = 0;
             }
             return ok;
         }
 
-        private void tbWorkingDir_TextChanged(object sender, EventArgs e)
-        {
-            MtMdm.SetDownLoadPath(tbWorkingDir.Text);
-        }
+
     }
 }

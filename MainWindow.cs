@@ -24,7 +24,6 @@ namespace MT_MDM
 {
     public partial class MtMdm : Form
     {
-        private static SerialPort serialPort = new SerialPort();
         Configuration config = ConfigurationManager.OpenExeConfiguration(Application.ExecutablePath);
 
         string textStr = "";
@@ -55,10 +54,17 @@ namespace MT_MDM
         private static int _dataInPtr = 0;
         private static int _dataInEnd = 0;
         private static bool _dataFull = false;
+
+        private static bool _echo = false;
         // Locking variables
         //public static object syncObj = new object();
         //private static Queue <byte> serialBuffer = new Queue< byte>(); 
-        // event variables
+        // serial port values
+        //public static int gBaudRate = 0;
+        //public static string gPortName ="COM2";
+        //public static SerialPort serialPort = new SerialPort(); 
+        public static SerialBuffer serialPort = new SerialBuffer();
+
 
 
 
@@ -68,6 +74,8 @@ namespace MT_MDM
         //***************** Form Controls ****************************//
         public MtMdm()
         {
+            //Program.Name = "VT52";
+            //this.Text = Program.Name; 
             InitializeComponent();
 
            }
@@ -76,7 +84,7 @@ namespace MT_MDM
             RefreshPortList();
             loadPreviousSessionSettings();
             SetDisconnected();
-            serialPort.DataReceived += new SerialDataReceivedEventHandler(serialDataReceived);
+            //serialPort.DataReceived += new SerialDataReceivedEventHandler(serialDataReceived);
             Display_init();
             cursorBox.Text = cursorX.ToString() + "x" + (cursorY - 75).ToString();
             statusBox.Enabled= false;
@@ -87,7 +95,18 @@ namespace MT_MDM
             defaultRtbH = h19Term.Size.Height;
             defaultRtbW = h19Term.Size.Width;
         }
-
+        //protected override void OnHandleCreated(EventArgs e)
+        //{
+        //    base.OnHandleCreated(e);
+        //    IntPtr hMenu = Win32.GetSystemMenu(this.Handle, false);
+        //    Win32.AppendMenu(hMenu, MF.SEPARATOR, (UIntPtr)0);
+        //    Win32.AppendMenu(hMenu, MF.STRING, (UIntPtr)5, "Settings\tF5");
+        //    Win32.AppendMenu(hMenu, MF.STRING, (UIntPtr)6, "Connection\tF6");
+        //    Win32.AppendMenu(hMenu, MF.STRING, (UIntPtr)11, "Brightness -\tF11");
+        //    Win32.AppendMenu(hMenu, MF.STRING, (UIntPtr)12, "Brightness +\tF12");
+        //    Win32.AppendMenu(hMenu, MF.SEPARATOR, (UIntPtr)0);
+        //    Win32.AppendMenu(hMenu, MF.STRING, (UIntPtr)99, String.Concat("About ", Program.Name));
+        //}
         public static void SetDownLoadPath(string path)
         {
             downlLoadPath = path;
@@ -96,29 +115,53 @@ namespace MT_MDM
 
         private void BtnConnect_Click(object sender, EventArgs e)
         {
+            ConnectPort();
+
+        }
+
+        private void ConnectPort()
+        {
+            //serialPort.BaudRate = GetBaudRate();
+            //serialPort.PortName = GetPortName();
+            //serialPort.Parity = (Parity)0;// "None";
+            //serialPort.StopBits = (StopBits)1;
+            //serialPort.DataBits = 8;
+            //try
+            //{
+            //    serialPort.Open();
+            //}
+            //catch (Exception)
+            //{
+            //    ExMessage("Could not connect to the COM port selected!");
+            //}
+            if (serialPort.Connect(GetBaudRate(), GetPortName()))
             {
-                serialPort.BaudRate = GetBaudRate();
-                serialPort.PortName = GetPortName();
-                serialPort.Parity = (Parity)0;// "None";
-                serialPort.StopBits = (StopBits)1;
-                serialPort.DataBits = 8;
+                serialPort.SerialData += OnSerialData;
+                SetConnected();
+                online = true;
             }
-            try
-            {
-                serialPort.Open();
-            }
-            catch (Exception)
-            {
-                ExMessage("Could not connect to the COM port selected!");
-            }
-            SetConnected();
-            online = true;
-        }       
-     
+
+        }
 
         private void BtnFont_Click(object sender, EventArgs e)
         {
             LoadFont();
+        }
+        private void BtnEcho_Click(object sender, EventArgs e)
+        {
+            _echo = !_echo;
+            if (_echo)
+                btnEcho.Text = "Echo On";
+            else
+                btnEcho.Text = "Echo Off";
+        }
+        private void BtnYmodem_Click(object sender, EventArgs e)
+        {
+            var fileTransfer = new Ymodem();
+            fileTransfer.ShowDialog();
+            fileTransfer.Close();
+
+
         }
         private void MtMdm_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -187,7 +230,7 @@ namespace MT_MDM
 
             try
             {
-                data = serialPort.ReadByte();
+               // data = serialPort.ReadByte();
             }
             catch (Exception ex)
             {
@@ -204,7 +247,7 @@ namespace MT_MDM
                 //if (!SerialInBuf((byte)data))    // false if serial data buffer is full
                 //    serialBufFull = true;               // serial buffer full flag
 
-                Ymodem.serialData.AddData((byte) data);
+                //Ymodem.serialData.AddData((byte) data);
             }
             //if (!ymodem)
             //{
@@ -300,13 +343,10 @@ namespace MT_MDM
             statusBox.Text = "Connected.";
         }
 
-        /// <summary>
-        /// RESET UI SO THAT USER CAN CONNECT TO ANOTHER SERIAL PORT
-        /// IF NECESSARY
-        /// </summary>
+ 
         public void SetDisconnected()
         {
-            serialPort.Close();
+            //serialPort.Close();    NEED TO ADD SOME CODE
             //scanButton.Enabled = false;
             BtnConnect.Enabled = true;
             BtnDrop.Enabled = false;
@@ -315,13 +355,7 @@ namespace MT_MDM
         //
         //*********************** File Transfer
         //
-        private void BtnYmodem_Click(object sender, EventArgs e)
-        {
-            var fileTransfer = new Ymodem();
-            fileTransfer.ShowDialog();
-            fileTransfer.Close();
 
-        }
         //************ Terminal Display Functions ************************
         // main form key press method, not currently used
         private void MtMdm_KeyPress(object sender, KeyPressEventArgs e)
@@ -329,7 +363,8 @@ namespace MT_MDM
             byte[] ch = new byte[1];
             ch[0] = (byte)e.KeyChar;
             Debug.WriteLine("MtMdm: char {0}, value {1}", (char)ch[0], BitConverter.ToString(ch));
-            DisplayChar(ch[0]);
+            if (_echo)
+                DisplayChar(ch[0]);
             e.Handled = true;       // Tell Windows no further action is needed to keep RTB from updating screen
 
         }
@@ -353,14 +388,15 @@ namespace MT_MDM
 
         }
 
-        public static void SendByte(byte val)
+        private void SendByte(byte val)
         {
-            byte[] ch = new byte[1];
-            ch[0] = val;
+            //byte[] ch = new byte[1];
+            //ch[0] = val;
             if (online)
                 try
                 {
-                    serialPort.Write(ch, 0, 1);     // requires character array
+                    serialPort.Send(val);    
+                    Debug.WriteLine("Sent {0:X}", val);
                 }
                 catch (Exception ex)
                 {

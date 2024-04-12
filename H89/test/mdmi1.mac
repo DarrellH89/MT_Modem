@@ -1,0 +1,805 @@
+;C/80 Compiler 3.1 (4/11/84) - (c) 1984 The Software Toolworks
+
+	EXTRN	ticks
+	EXTRN	statlin
+	EXTRN	baudrat
+	EXTRN	baud
+	EXTRN	port
+	EXTRN	fastFla
+	CSEG
+tranSiz::	DW	1024
+xyModem::	DB	88
+Curstr::	DB	27,89,32,32,0
+ClrEOL::	DB	27,91,75,0
+ClrScr::	DB	27,91,69,0
+SaveCur::	DB	27,106,0
+RetCur::	DB	27,107,0
+On25::	DB	27,120,49,0
+Off25::	DB	27,121,49,0
+
+	PUBLIC	SetBaud
+	DSEG
+.d:	DW	0
+.e:	DW	0
+.f:	DW	0
+	CSEG
+
+SetBaud:	LHLD	.f
+	PUSH	H
+	LHLD	.e
+	PUSH	H
+	LHLD	.d
+	PUSH	H
+	LXI	H,.c
+	SHLD	.e
+	LXI	H,.c+2
+	SHLD	.f
+	LXI	H,SaveCur
+	PUSH	H
+	CALL	puts
+	POP	B
+	LXI	H,On25
+	PUSH	H
+	CALL	puts
+	POP	B
+	LXI	H,1
+	PUSH	H
+	LXI	H,25
+	PUSH	H
+	CALL	gotoXY
+	POP	B
+	POP	B
+	CALL	prnt_1
+	LXI	H,.c+5
+	PUSH	H
+	LXI	H,.c+13
+	PUSH	H
+	LXI	H,.c+53
+	PUSH	H
+	LXI	H,27
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	POP	B
+	POP	B
+	POP	B
+.i:	CALL	GetCon
+	SHLD	.d
+.g:	LHLD	.d
+	MOV	A,H
+	ORA	L
+	JZ	.i
+.h:	LXI	H,Off25
+	PUSH	H
+	CALL	puts
+	POP	B
+	LXI	H,RetCur
+	PUSH	H
+	CALL	puts
+	POP	B
+	LHLD	.d
+	LXI	D,-48
+	DAD	D
+	JMP	.k
+.l:	LXI	H,6
+	SHLD	baudrat
+	LXI	H,.c+79
+	SHLD	.e
+	LXI	H,19200
+	SHLD	baud
+	JMP	.j
+.m:	LXI	H,12
+	SHLD	baudrat
+	LXI	H,.c+85
+	SHLD	.e
+	LXI	H,9600
+	SHLD	baud
+	JMP	.j
+.n:	LXI	H,24
+	SHLD	baudrat
+	LXI	H,.c+90
+	SHLD	.e
+	LXI	H,4800
+	SHLD	baud
+	JMP	.j
+.o:	LXI	H,96
+	SHLD	baudrat
+	LXI	H,.c+95
+	SHLD	.e
+	LXI	H,1200
+	SHLD	baud
+	JMP	.j
+.p:	LXI	H,208
+	MOV	A,L
+	STA	port
+	LXI	H,.c+100
+	SHLD	.f
+	JMP	.j
+.q:	LXI	H,216
+	MOV	A,L
+	STA	port
+	LXI	H,.c+2
+	SHLD	.f
+	JMP	.j
+.r:	LXI	H,224
+	MOV	A,L
+	STA	port
+	LXI	H,.c+76
+	SHLD	.f
+	JMP	.j
+	JMP	.j
+.k:	CALL	.switch##
+	DW	.l,1
+	DW	.m,2
+	DW	.n,3
+	DW	.o,4
+	DW	.p,5
+	DW	.q,6
+	DW	.r,7
+	DW	0
+.j:	LHLD	.e
+	MOV	A,H
+	ORA	L
+	JZ	.s
+	LXI	H,statlin
+	PUSH	H
+	LHLD	.e
+	PUSH	H
+	CALL	strcpy
+	POP	B
+	POP	B
+	LHLD	.e
+	PUSH	H
+	CALL	strlen
+	POP	B
+	SHLD	.d
+.v:	LHLD	.d
+	LXI	D,32754
+	MOV	A,H
+	XRI	128
+	MOV	H,A
+	DAD	D
+	JC	.u
+	JMP	.w
+.t:	LHLD	.d
+	INX	H
+	SHLD	.d
+	DCX	H
+	JMP	.v
+.w:	LHLD	.d
+	LXI	D,statlin
+	DAD	D
+	MVI	M,32
+	JMP	.t
+.u:	LXI	H,56
+	MOV	A,L
+	STA	statlin+13
+	LXI	H,78
+	MOV	A,L
+	STA	statlin+14
+	LXI	H,49
+	MOV	A,L
+	STA	statlin+15
+	LXI	H,0
+	MOV	A,L
+	STA	statlin+16
+	LHLD	baudrat
+	PUSH	H
+	CALL	Setup
+	POP	B
+.s:	LXI	H,32
+	MOV	A,L
+	STA	statlin+16
+	LHLD	.f
+	INX	H
+	SHLD	.f
+	DCX	H
+	MOV	L,M
+	MVI	H,0
+	MOV	A,L
+	STA	statlin+17
+	LHLD	.f
+	MOV	L,M
+	MVI	H,0
+	MOV	A,L
+	STA	statlin+18
+	LXI	H,0
+	MOV	A,L
+	STA	statlin+19
+	CALL	SetPort
+	CALL	Stat25
+	LXI	H,0
+.x:	XCHG
+	POP	H
+	SHLD	.d
+	POP	H
+	SHLD	.e
+	POP	H
+	SHLD	.f
+	XCHG
+	RET
+.c:
+	DB	0
+	DB	0
+	DB	'D8'
+	DB	0
+	DB	'%s%s%cK'
+	DB	0
+	DB	'Baud? 1) 19200 2) 9600 3) 4800 4) 1200 '
+	DB	0
+	DB	'  Port? 5) D0 6) D8 7) E0'
+	DB	0
+	DB	'19200'
+	DB	0
+	DB	'9600'
+	DB	0
+	DB	'4800'
+	DB	0
+	DB	'1200'
+	DB	0
+	DB	'D0'
+	DB	0
+
+	PUBLIC	SetPort
+
+SetPort:	DS	0
+;#asm
+  .z80
+  ld	   a,(port)
+  ld	   (sdport+1), a
+  ld	   (rcport+1), a
+  add	   a, 5
+  ld	   (osport+1), a
+  ld	   (isport+1), a
+  .8080
+;#endasm
+	RET
+
+	PUBLIC	setYmod
+
+setYmod:	DCX	SP
+.bb:	CALL	prnt_1
+	LXI	H,.y
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	CALL	prnt_1
+	LXI	H,.y+2
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	CALL	prnt_1
+	LXI	H,.y+40
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	CALL	prnt_1
+	LXI	H,.y+72
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	CALL	prnt_1
+	LXI	H,.y+85
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	CALL	prnt_1
+	LXI	H,.y+98
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	CALL	prnt_1
+	LXI	H,.y+109
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+.eb:	LXI	H,0
+	DAD	SP
+	PUSH	H
+	CALL	GetCon
+	POP	D
+	MOV	A,L
+	STAX	D
+.cb:	LXI	H,0
+	DAD	SP
+	MOV	L,M
+	MVI	H,0
+	MOV	A,H
+	ORA	L
+	JZ	.eb
+.db:	LXI	H,10
+	PUSH	H
+	CALL	putchar
+	POP	B
+	LXI	H,0
+	DAD	SP
+	MOV	L,M
+	MVI	H,0
+	JMP	.gb
+.hb:	LXI	H,128
+	SHLD	tranSiz
+	CALL	prnt_1
+	LXI	H,.y+117
+	PUSH	H
+	LHLD	tranSiz
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	POP	B
+	JMP	.fb
+.ib:	LXI	H,1024
+	SHLD	tranSiz
+	CALL	prnt_1
+	LXI	H,.y+117
+	PUSH	H
+	LHLD	tranSiz
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	POP	B
+	JMP	.fb
+.jb:	LXI	H,88
+	MOV	A,L
+	STA	xyModem
+	CALL	prnt_1
+	LXI	H,.y+133
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	JMP	.fb
+.kb:	LXI	H,89
+	MOV	A,L
+	STA	xyModem
+	CALL	prnt_1
+	LXI	H,.y+149
+	PUSH	H
+	CALL	prnt_2
+	POP	B
+	JMP	.fb
+	JMP	.fb
+.gb:	CALL	.switch##
+	DW	.hb,49
+	DW	.ib,50
+	DW	.jb,51
+	DW	.kb,52
+	DW	0
+.fb:	DS	0
+.z:	LXI	H,0
+	DAD	SP
+	MOV	L,M
+	MVI	H,0
+	LXI	D,-48
+	DAD	D
+	MOV	A,H
+	ORA	L
+	JNZ	.bb
+.ab:	DS	0
+.lb:	INX	SP
+	RET
+.y:
+	DB	10
+	DB	0
+	DB	'Options? 1) Transfer Block 128 bytes'
+	DB	10
+	DB	0
+	DB	9
+	DB	' 2) Transfer Block 1024 bytes'
+	DB	10
+	DB	0
+	DB	9
+	DB	' 3) Xmodem'
+	DB	10
+	DB	0
+	DB	9
+	DB	' 4) Ymodem'
+	DB	10
+	DB	0
+	DB	9
+	DB	' 0) Exit'
+	DB	10
+	DB	0
+	DB	'    ?: '
+	DB	0
+	DB	'Block size: %d'
+	DB	10
+	DB	0
+	DB	'Set for Xmodem'
+	DB	10
+	DB	0
+	DB	'Set for Ymodem'
+	DB	10
+	DB	0
+
+	PUBLIC	FlushCo
+	DSEG
+.nb:	DW	0
+	CSEG
+
+FlushCo:	LHLD	.nb
+	PUSH	H
+.ob:	CALL	GetCon
+	SHLD	.nb
+	CALL	e.0##
+	JZ	.pb
+	JMP	.ob
+.pb:	DS	0
+.qb:	POP	H
+	SHLD	.nb
+	RET
+
+	PUBLIC	SetDTR
+
+SetDTR:	DS	0
+;#asm
+    .Z80
+     ld   a,(port)
+     ld   c, 4
+     add  a,c
+     ld   c,a
+     ld   a,1
+     out  (c), a
+     .8080
+;#endasm
+	RET
+
+	PUBLIC	ResetDT
+
+ResetDT:	DS	0
+;#asm
+    .Z80
+     ld   a,(port)
+     ld   c, 4
+     add  a,c
+     ld   c,a
+     ld   a,0
+     out  (c), a
+     .8080
+;#endasm
+	RET
+
+	PUBLIC	SetCTS
+
+SetCTS:	DS	0
+;#asm
+    .Z80
+     ld   a,(port)
+     ld   c, 4
+     add  a,c
+     ld   c,a
+     ld   a,2
+     out  (c), a
+     .8080
+;#endasm
+	RET
+
+	PUBLIC	ResetCT
+
+ResetCT:	DS	0
+;#asm
+    .Z80
+     ld   a,(port)
+     ld   c, 4
+     add  a,c
+     ld   c,a
+     ld   a,0
+     out  (c), a
+     .8080
+;#endasm
+	RET
+
+	PUBLIC	Ostatus
+
+Ostatus:	DS	0
+;#asm
+    .Z80
+osport:     in	  a, (0D8H +5)
+     and   20h
+     ld    l,a
+     ld    h,0
+    .8080
+;#endasm
+	RET
+
+	PUBLIC	Slow
+
+Slow:	DS	0
+;#asm
+    .Z80
+    ld	 a,(02036H )
+    and  0EFH
+    ld	 (02036H ), a
+;   OUT  (0F2H), A
+    .8080
+;#endasm
+	LXI	H,0
+	MOV	A,L
+	STA	fastFla
+	RET
+
+	PUBLIC	Fast
+
+Fast:	DS	0
+;#asm
+    .Z80
+    ld	 a,(02036H )
+    OR	 10H
+    ld	 (02036H ), a
+ ;  OUT  (0F2H), A
+    .8080
+;#endasm
+	LXI	H,1
+	MOV	A,L
+	STA	fastFla
+	RET
+
+	PUBLIC	Istatus
+
+Istatus:	DS	0
+;#asm
+    .Z80
+xisport:
+    in	   a,(0D8H +5)
+    and    3
+    ld	   l,a
+    ld	   h,0
+    .8080
+;#endasm
+	RET
+
+	PUBLIC	Send
+
+Send:	DS	0
+.rb:	CALL	Ostatus
+	CALL	c.not##
+	JZ	.sb
+	JMP	.rb
+.sb:	DS	0
+;#asm
+    .Z80
+     ld   hl,2
+     add  hl,sp
+     ld   a,(hl)
+sdport:
+     out   (0D8H ),a
+     .8080
+;#endasm
+	RET
+
+	PUBLIC	rcvchar
+
+rcvchar:	DS	0
+;#asm
+    .z80
+isport:
+    in	   a,(0D8H +5)
+    and    1
+    ld	   hl, -1
+    ret    z
+rcport:
+    in	  a, (0D8H )
+    ld	  h,0
+    ld	  l,a
+    .8080
+;#endasm
+	RET
+
+	PUBLIC	Readlin
+	DSEG
+.tb:	DW	0
+	CSEG
+
+Readlin:	LHLD	.tb
+	PUSH	H
+	LXI	H,4
+	DAD	SP
+	PUSH	H
+	LXI	H,6
+	DAD	SP
+	MOV	A,M
+	INX	H
+	MOV	H,M
+	MOV	L,A
+	LXI	D,500
+	CALL	c.mult##
+	CALL	q.##
+	LHLD	ticks
+	MVI	M,0
+	INX	H
+	MVI	M,0
+	LXI	H,-1
+	SHLD	.tb
+.ub:	LHLD	ticks
+	MOV	A,M
+	INX	H
+	MOV	H,M
+	MOV	L,A
+	PUSH	H
+	LXI	H,6
+	DAD	SP
+	MOV	A,M
+	INX	H
+	MOV	H,M
+	MOV	L,A
+	POP	D
+	CALL	c.ult##
+	JZ	.vb
+	CALL	rcvchar
+	SHLD	.tb
+	INX	H
+	CALL	e.0##
+	JZ	.wb
+	JMP	.vb
+.wb:	JMP	.ub
+.vb:	LHLD	.tb
+.xb:	XCHG
+	POP	H
+	SHLD	.tb
+	XCHG
+	RET
+
+	PUBLIC	GetCon
+
+GetCon:	DS	0
+;#asm
+	SCALL	MACRO	TYPE
+		DB	377Q,TYPE
+	ENDM
+	scall	1	; check console stat, return 0 if not ready
+	lxi	h,0
+	rc
+	mov	l,a	; Had a char, so return it in HL
+;#endasm
+	RET
+
+	PUBLIC	SendTex
+
+SendTex:	DS	0
+.yb:	LXI	H,2
+	DAD	SP
+	MOV	A,M
+	INX	H
+	MOV	H,M
+	MOV	L,A
+	MOV	L,M
+	MVI	H,0
+	MOV	A,H
+	ORA	L
+	JZ	.zb
+	LXI	H,2
+	DAD	SP
+	PUSH	H
+	MOV	A,M
+	INX	H
+	MOV	H,M
+	MOV	L,A
+	INX	H
+	CALL	q.##
+	DCX	H
+	PUSH	H
+	CALL	Send
+	POP	B
+	JMP	.yb
+.zb:	RET
+
+	PUBLIC	Setup
+
+Setup:	CALL	set_cch
+;#asm
+	.z80
+	ld   a,(port)
+	ld   b,a		  ; save port in b
+	ld   c, 1		 ; port + 1
+	add  a,c
+	ld   c,a
+	ld     hl,2		  ; set HL to point to the desired baud
+	add    hl,sp		  ;   rate pushed onto the stack
+	di			  ; Kill interrupt mode
+	xor	A		  ;
+	out	(c),a	  ; interrupt enable register
+	inc	c	  ; port + 2
+	out	(c),a	  ; interrupt enable register
+	ld	a,83H		  ; Set divisor (baud rate) latch in
+	inc	c		  ; 0D8H +3
+	out	(c),a	     ; line control register
+	ld	a, (hl)
+	ld	c, b	    ; port
+	out	(c),a	  ; Set LS divisor
+	inc	hl
+	ld	a,(hl)
+	inc	c	  ; port + 1
+	out	(c),a	  ; Set MS divisor
+	ld	 a,3		; set to 8N1
+	inc	c		  ; port+2
+	inc	c		  ; port+3
+	out	(c),a	     ; modem control register
+	inc	c		   ; 0D8H  + 4
+	ld	a,1
+	out	(c), a		   ; set DTR on
+	ei
+	ld	c,b	   ;  port
+	in	a,(c)	 ;(0D8H )	  ; clear any garbage
+	in	a,(c)	 ;a,(0D8H )
+	ld	hl,0		  ; Return 0
+;	 ret
+	.8080
+;#endasm
+	RET
+
+	PUBLIC	putcon
+
+putcon:	LXI	H,2
+	DAD	SP
+	MOV	L,M
+	MVI	H,0
+	PUSH	H
+	CALL	putc
+	POP	B
+	RET
+
+	PUBLIC	puts
+
+puts:	DS	0
+;#asm
+	.z80
+	ld	hl,4		; get the pointer to the string
+	call	mtoffset
+puts1:	in	a,(0E8H +5)	; check console status
+	and	20h
+	jr	z,puts1 	; loop until console ready
+	ld	a,(hl)
+	or	a		; check for 0
+	jr	z,putse 	; done
+	out	(0E8H ),a
+	inc	hl		; point to next
+	jr	puts1
+putse:	ld	hl,0		; return success
+;	 ret
+;
+mtoffset::
+	add	hl,sp		; HL contains offset to value in stack
+	ld	a,(hl)		; get LS byte
+	inc	hl		; point to MS byte
+	ld	h,(hl)		; get MS byte
+	ld	l,a		; load LS byte into L
+	ret
+	.8080
+;#endasm
+	RET
+
+	PUBLIC	gotoXY
+
+gotoXY:	DS	0
+;#asm
+        .z80
+        ld      hl,6            ; get x
+        call    mtoffset
+        ld      de,31           ; add video offset
+        add     hl,de
+        ld      a,l             ; save the x value
+        ld      (curstr+3),a
+        ld      hl,4            ; get y
+        call    mtoffset
+        ld      de,31
+        add     hl,de           ; add video offset for y
+        ld      a,l
+        ld      (curstr+2),a
+        ld      hl,curstr       ; get address of XY cursor string
+        push    hl              ; put on stack for puts()
+        call    puts
+        pop     bc              ; fix stack
+	ld	hl,0		; return 0
+	ret
+	.8080
+;#endasm
+	RET
+	EXTRN	prnt_1
+	EXTRN	prnt_2
+	EXTRN	strcpy
+	EXTRN	strlen
+	EXTRN	Stat25
+	EXTRN	putchar
+	EXTRN	set_cch
+	EXTRN	putc
+	EXTRN	g.
+	END
+                                                                                                                                                                       

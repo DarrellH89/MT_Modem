@@ -1,0 +1,19 @@
+NOTE Compile C80 Float/ Long program
+c $1.c
+NOTE M80
+m80 $1=$1/m
+tst m80
+if error;goto ERROR;fi
+;=LINK
+NOTE L80
+l80 $1, fprintf,flibrary/s,stdlib/s,clibrary/s,$1/n/e
+if error;goto ERROR;fi
+goto DONE
+;=ERROR
+echo ERROR DURING ASSEMBLY/Linkage
+fi
+;=DONE
+era $1.rel
+^*
+
+
